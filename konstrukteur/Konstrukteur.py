@@ -454,16 +454,14 @@ class Konstrukteur:
 
 	def __generateRenderModel(self, pages, currentItem, pageType):
 		res = {}
-		for key in currentItem:
-			res[key] = currentItem[key]
 
 		res["type"] = pageType
 		res["current"] = currentItem
 		res["pages"] = self.__filterAndSortPages(pages, currentItem)
 		res["config"] = dict(itertools.chain(self.config.items(), {
-				"sitename" : self.sitename,
-				"siteurl" : self.siteurl
-			}.items()))
+			"sitename" : self.sitename,
+			"siteurl" : self.siteurl
+		}.items()))
 		res["languages"] = self.__mapLanguages(self.__languages, currentItem)
 
 		return res
