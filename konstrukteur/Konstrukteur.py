@@ -297,7 +297,7 @@ class Konstrukteur:
 
 		for id, cmd, params in self.__commandReplacer:
 			result, type = self.__profile.executeCommand(cmd, params)
-			renderModel[id] = result
+			# renderModel[id] = result
 
 		self.__profile.setWorkingPath(oldWorkingPath)
 
