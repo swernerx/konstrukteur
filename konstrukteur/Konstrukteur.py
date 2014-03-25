@@ -7,7 +7,7 @@
 # requires pystache, beautifulsoup4, watchdog
 
 # Little helper to allow python modules in libs path
-import sys, os.path, inspect
+import sys, os.path, inspect, json
 filename = inspect.getframeinfo(inspect.currentframe()).filename
 path = os.path.join(os.path.dirname(os.path.abspath(filename)), "..", "konstrukteurlibs", "watchdog", "src")
 sys.path.insert(0,path)
@@ -476,15 +476,12 @@ class Konstrukteur:
 			"theme": self.theme,
 			"type": type[0].upper() + type[1:]
 		}
-		layoutName = "%s.Layout" % self.theme
 
-		if not layoutName in self.__templates:
-			raise RuntimeError("Template %s not found" % layoutName)
 		if not pageName in self.__templates:
 			raise RuntimeError("Template %s not found" % pageName)
 
-		renderModel["current"]["content"] = renderModel["content"] = self.__renderer.render(renderModel["content"], renderModel)
-		renderModel["current"]["content"] = renderModel["content"] = self.__renderer.render(self.__templates[pageName], renderModel)
-		renderModel["current"]["content"] = renderModel["content"] = self.__renderer.render(self.__templates[layoutName], renderModel)
+		serialized = json.dumps(renderModel, sort_keys=True, indent=2, separators=(',', ': '))
+		print("MODEL")
+		print(serialized)
 
-		return self.__renderer.render(renderModel["content"], renderModel)
+		return self.__renderer.render(self.__templates[pageName], renderModel)
