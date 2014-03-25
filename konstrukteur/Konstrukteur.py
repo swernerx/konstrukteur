@@ -4,8 +4,6 @@
 # Copyright 2014 Sebastian Werner
 #
 
-# requires pystache, beautifulsoup4, watchdog
-
 # Little helper to allow python modules in libs path
 import sys, os.path, inspect, json
 filename = inspect.getframeinfo(inspect.currentframe()).filename
