@@ -267,13 +267,14 @@ class Konstrukteur:
 				pageItem["relativeUrl"] = ""
 			else:
 				pageItem["active"] = False
-				pageItem["relativeUrl"] = os.path.relpath(page["rootUrl"], os.path.dirname(currentItem["rootUrl"]))
+				pageItem["relativeUrl"] = os.path.relpath(pageItem["rootUrl"], os.path.dirname(currentItem["rootUrl"]))
 
 		for pageItem in pages:
 			if pageItem["slug"] == currentItem["slug"]:
 				if not pageItem["lang"] == currentItem["lang"]:
 					if not "translations" in currentItem:
 						currentItem["translations"] = {}
+
 					currentItem["translations"][pageItem["lang"]] = pageItem["relativeUrl"]
 
 
