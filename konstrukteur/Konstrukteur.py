@@ -222,22 +222,22 @@ class Konstrukteur:
 		Console.outdent()
 
 
-	def __mapLanguages(self, languages, currentPage):
+	def __mapLanguages(self, languages, currentItem):
 		""" Annotate languges list with information about current language """
 
 		def languageMap(value):
-			currentLanguage = value == currentPage["lang"]
+			currentLanguage = value == currentItem["lang"]
 			currentName = self.__locale[value].getName(value)
 
-			if "translations" not in currentPage:
+			if "translations" not in currentItem:
 				return None
 
 			if currentLanguage:
 				translatedName = currentName
 				relativeUrl = "."
 			else:
-				translatedName = self.__locale[currentPage["lang"]].getName(value)
-				relativeUrl = currentPage["translations"][value]
+				translatedName = self.__locale[currentItem["lang"]].getName(value)
+				relativeUrl = currentItem["translations"][value]
 
 			return {
 				"code" : value,
@@ -245,7 +245,7 @@ class Konstrukteur:
 				"name" : currentName,
 				"translatedName" : translatedName,
 				"relativeUrl" : relativeUrl,
-				"page" : currentPage
+				"page" : currentItem
 			}
 
 
@@ -253,40 +253,40 @@ class Konstrukteur:
 
 
 
-	def __refreshUrls(self, pages, currentPage, pageUrlTemplate):
+	def __refreshUrls(self, pages, currentItem, pageUrlTemplate):
 		""" Refresh urls of every page relative to current active page """
 		siteUrl = self.siteurl
 
-		for page in pages:
-			url = page["url"] if "url" in page else self.__renderer.render(pageUrlTemplate, { "current" : page })
-			page["absoluteUrl"] = os.path.join(siteUrl, url)
-			page["rootUrl"] = url
-			page["baseUrl"] = os.path.relpath("/", os.path.dirname("/%s" % url))
+		for pageItem in pages:
+			url = pageItem["url"] if "url" in pageItem else self.__renderer.render(pageUrlTemplate, { "current" : pageItem })
+			pageItem["absoluteUrl"] = os.path.join(siteUrl, url)
+			pageItem["rootUrl"] = url
+			pageItem["baseUrl"] = os.path.relpath("/", os.path.dirname("/%s" % url))
 
-		for page in pages:
-			if page == currentPage:
-				page["active"] = True
-				page["relativeUrl"] = ""
+		for pageItem in pages:
+			if pageItem == currentItem:
+				pageItem["active"] = True
+				pageItem["relativeUrl"] = ""
 			else:
-				page["active"] = False
-				page["relativeUrl"] = os.path.relpath(page["rootUrl"], os.path.dirname(currentPage["rootUrl"]))
+				pageItem["active"] = False
+				pageItem["relativeUrl"] = os.path.relpath(page["rootUrl"], os.path.dirname(currentItem["rootUrl"]))
 
-		for page in pages:
-			if page["slug"] == currentPage["slug"]:
-				if not page["lang"] == currentPage["lang"]:
-					if not "translations" in currentPage:
-						currentPage["translations"] = {}
-					currentPage["translations"][page["lang"]] = page["relativeUrl"]
+		for pageItem in pages:
+			if pageItem["slug"] == currentItem["slug"]:
+				if not pageItem["lang"] == currentItem["lang"]:
+					if not "translations" in currentItem:
+						currentItem["translations"] = {}
+					currentItem["translations"][pageItem["lang"]] = pageItem["relativeUrl"]
 
 
 
-	def __filterAndSortPages(self, pages, currentPage):
+	def __filterAndSortPages(self, pages, currentItem):
 		""" Return sorted list of only pages of same language and not hidden """
 		pageList = []
 
-		for page in pages:
-			if page["lang"] == currentPage["lang"] and not page["status"] == "hidden":
-				pageList.append(page)
+		for pageItem in pages:
+			if pageItem["lang"] == currentItem["lang"] and not pageItem["status"] == "hidden":
+				pageList.append(pageItem)
 
 		return sorted(pageList, key=lambda page: page["pos"])
 
@@ -376,13 +376,13 @@ class Konstrukteur:
 				items = self.__pages
 
 			length = len(items)
-			for position, currentPage in enumerate(items):
-				Console.info("Generating %s %s/%s: %s...", contentType, position+1, length, currentPage["slug"])
+			for position, currentItem in enumerate(items):
+				Console.info("Generating %s %s/%s: %s...", contentType, position+1, length, currentItem["slug"])
 
-				renderModel = self.__generateRenderModel(self.__pages, currentPage, contentType)
+				renderModel = self.__generateRenderModel(self.__pages, currentItem, contentType)
 
-				if "url" in currentPage:
-					processedFilename = currentPage["url"]
+				if "url" in currentItem:
+					processedFilename = currentItem["url"]
 				else:
 					processedFilename = self.__renderer.render(urlGenerator, renderModel)
 
@@ -394,15 +394,15 @@ class Konstrukteur:
 					cacheId = None
 					resultContent = None
 				else:
-					cacheId = "%s-%s-%s-%s" % (contentType, currentPage["slug"], currentPage["date"], self.__profile.getId())
-					resultContent = self.__cache.read(cacheId, currentPage["mtime"])
+					cacheId = "%s-%s-%s-%s" % (contentType, currentItem["slug"], currentItem["date"], self.__profile.getId())
+					resultContent = self.__cache.read(cacheId, currentItem["mtime"])
 
 				# Check cache validity
 				if resultContent is None:
-					self.__refreshUrls(items, currentPage, urlGenerator)
+					self.__refreshUrls(items, currentItem, urlGenerator)
 					if contentType == "archive":
 						for cp in items:
-							self.__refreshUrls(currentPage["post"], cp, self.__postUrl)
+							self.__refreshUrls(currentItem["post"], cp, self.__postUrl)
 
 					self.__jasyCommandsHandling(renderModel, outputFilename)
 
@@ -411,7 +411,7 @@ class Konstrukteur:
 
 					# Store result into cache when caching is enabled (non archive pages only)
 					if cacheId:
-						self.__cache.store(cacheId, resultContent, currentPage["mtime"])
+						self.__cache.store(cacheId, resultContent, currentItem["mtime"])
 
 				# Write actual output file
 				self.__fileManager.writeFile(outputFilename, resultContent)
@@ -453,19 +453,19 @@ class Konstrukteur:
 		return item["date"]
 
 
-	def __generateRenderModel(self, pages, currentPage, pageType):
+	def __generateRenderModel(self, pages, currentItem, pageType):
 		res = {}
-		for key in currentPage:
-			res[key] = currentPage[key]
+		for key in currentItem:
+			res[key] = currentItem[key]
 
 		res["type"] = pageType
-		res["current"] = currentPage
-		res["pages"] = self.__filterAndSortPages(pages, currentPage)
+		res["current"] = currentItem
+		res["pages"] = self.__filterAndSortPages(pages, currentItem)
 		res["config"] = dict(itertools.chain(self.config.items(), {
 				"sitename" : self.sitename,
 				"siteurl" : self.siteurl
 			}.items()))
-		res["languages"] = self.__mapLanguages(self.__languages, currentPage)
+		res["languages"] = self.__mapLanguages(self.__languages, currentItem)
 
 		return res
 
