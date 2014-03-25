@@ -477,8 +477,10 @@ class Konstrukteur:
 		if not pageName in self.__templates:
 			raise RuntimeError("Template %s not found" % pageName)
 
-		serialized = json.dumps(renderModel, sort_keys=True, indent=2, separators=(',', ': '))
-		print("MODEL")
-		print(serialized)
+		pageTemplate = self.__templates[pageName]
 
-		return self.__renderer.render(self.__templates[pageName], renderModel)
+		#serialized = json.dumps(renderModel, sort_keys=True, indent=2, separators=(',', ': '))
+		#print("MODEL")
+		#print(serialized)
+
+		return self.__renderer.render(pageTemplate, renderModel)
