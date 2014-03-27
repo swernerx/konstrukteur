@@ -35,6 +35,7 @@ innerTags = [
 ]
 
 indentString = "  "
+innerCounter = 0
 
 def escapeContent(content):
     return content.replace("\"", "\\\"").replace("\n", "\\n")
@@ -45,6 +46,8 @@ def escapeMatcher(str):
 
 
 def walk(node, labels, nostrip, indent):
+    global innerCounter
+
     code = ""
     prefix = indent * indentString
 
@@ -76,7 +79,9 @@ def walk(node, labels, nostrip, indent):
                 elif tag == "^":
                     code += prefix + 'if not self.__has(' + accessorCode + '):\n' + innerCode + '\n'
                 elif tag == "#":
-                    code += prefix + 'self.__section(' + accessorCode + ', partials, labels, function(data, partials, labels){\n' + innerCode + '\n});\n'
+                    innerCounter += 1
+                    code += prefix + ('def inner%s(self, data, partials, labels):\n' % innerCounter) + innerCode + '\n'
+                    code += prefix + 'self.__section(' + accessorCode + ', partials, labels, inner%s)\n' % innerCounter
                 elif tag == "=":
                     code += prefix + 'buf += self.__data(' + accessorCode + ')\n'
                 elif tag == "$":
