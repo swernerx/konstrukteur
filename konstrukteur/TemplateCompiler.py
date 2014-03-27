@@ -99,15 +99,16 @@ def walk(node, labels, nostrip, indent):
 
 
 def compile(text, labels=[], nostrip=False, name=None):
+    # Parse text into a tree
     tree = Parser.parse(text, nostrip)
+
+    # Generate code for render function
     wrapped = indentString + 'buf = ""\n' + walk(tree, labels, nostrip, 1) + "\n" + indentString + 'return buf'
-
     code = "def render(self, data, partials, labels):\n%s" % wrapped
-    print("CODE")
-    print(code)
 
-    print("")
-    print("EVALUATING...")
-    exec(code)
-    return Template.Template(render, text, name)
+    # Execute in an sandboxes environment
+    export = {}
+    exec(code, None, export)
 
+    # Create new template instance based on "compiled" exported render method
+    return Template.Template(export["render"], text, name)
