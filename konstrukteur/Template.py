@@ -12,18 +12,6 @@
 
 import re
 
-hasOwnProperty = Object.prototype.hasOwnProperty;
-undef = None
-
-htmlChars = re.compile("/[&<>\"\']")
-htmlMap = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    "'": '&#39;',
-    '"': '&quot;'
-}
-
 def htmlEscape(str):
     return htmlMap[str]
 
@@ -51,6 +39,16 @@ accessor = {
     "1": structured,
     "0": getter
 }
+
+htmlChars = re.compile("/[&<>\"\']")
+htmlMap = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    "'": '&#39;',
+    '"': '&quot;'
+}
+
 
 
 #
