@@ -54,19 +54,22 @@ def build(regenerate, profile):
 	if regenerate:
 		session.pause()
 
+	# Figuring out main project
+	main = session.getMain()
+
 	# Create a new site instance
 	site = Konstrukteur()
 
 	# Importing configuration from project
-	site.config = session.getMain().getConfigValue("konstrukteur")
-	site.sitename = session.getMain().getConfigValue("konstrukteur.site.name", "Test website")
-	site.siteurl = session.getMain().getConfigValue("konstrukteur.site.url", "//localhost")
-	site.posturl = session.getMain().getConfigValue("konstrukteur.blog.postUrl", "{{current.lang}}/blog/{{current.slug}}")
-	site.pageurl = session.getMain().getConfigValue("konstrukteur.pageUrl", "{{current.lang}}/{{current.slug}}")
-	site.feedurl = session.getMain().getConfigValue("konstrukteur.blog.feedUrl", "feed.{{current.lang}}.xml")
-	site.extensions = session.getMain().getConfigValue("konstrukteur.extensions", ["markdown", "html"])
-	site.theme = session.getMain().getConfigValue("konstrukteur.theme", session.getMain().getName())
-	site.defaultLanguage = session.getMain().getConfigValue("konstrukteur.defaultLanguage", "en")
+	site.config = main.getConfigValue("konstrukteur")
+	site.sitename = main.getConfigValue("konstrukteur.site.name", "Test website")
+	site.siteurl = main.getConfigValue("konstrukteur.site.url", "//localhost")
+	site.posturl = main.getConfigValue("konstrukteur.blog.postUrl", "{{current.lang}}/blog/{{current.slug}}")
+	site.pageurl = main.getConfigValue("konstrukteur.pageUrl", "{{current.lang}}/{{current.slug}}")
+	site.feedurl = main.getConfigValue("konstrukteur.blog.feedUrl", "feed.{{current.lang}}.xml")
+	site.extensions = main.getConfigValue("konstrukteur.extensions", ["markdown", "html"])
+	site.theme = main.getConfigValue("konstrukteur.theme", main.getName())
+	site.defaultLanguage = main.getConfigValue("konstrukteur.defaultLanguage", "en")
 	site.regenerate = not regenerate == False
 
 	# Run the actual build
