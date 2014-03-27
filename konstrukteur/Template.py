@@ -36,7 +36,7 @@ def structure(key, data):
 
 accessor = {
     "2": plain,
-    "1": structured,
+    "1": structure,
     "0": getter
 }
 
@@ -80,9 +80,9 @@ class Template:
 
         try:
             return self.__render(data, partials, labels);
-        except:
+        except ex:
             Console.error("Unable to render template " + (self.__name or ""));
-            throw ex;
+            raise ex;
 
 
     def __variable(self, key, method, data):
@@ -116,7 +116,7 @@ class Template:
         {String} Tries to find a partial in the current scope and render it
         """
 
-        if partials and name on partials:
+        if partials and name in partials:
             return partials[name].__render(data, partials, labels);
 
         Console.warn("Could not find partial: " + name);
