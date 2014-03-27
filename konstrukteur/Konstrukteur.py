@@ -70,10 +70,13 @@ class Konstrukteur:
 	__locale = None
 
 
-	def __init__(self, regenerate=False, project=None):
+	def __init__(self, profile, regenerate=False, project=None):
 		# Figuring out main project
+		session = profile.getSession()
 		main = project or session.getMain()
 
+		self.__profile = profile
+		self.__session = session
 		self.__locale = {}
 		self.__commandReplacer = []
 		self.__id = 0
@@ -85,53 +88,52 @@ class Konstrukteur:
 		self.config = main.getConfigValue("konstrukteur")
 		self.sitename = main.getConfigValue("konstrukteur.site.name", "Test website")
 		self.siteurl = main.getConfigValue("konstrukteur.site.url", "//localhost")
-		self.posturl = main.getConfigValue("konstrukteur.blog.postUrl", "{{current.lang}}/blog/{{current.slug}}")
-		self.pageurl = main.getConfigValue("konstrukteur.pageUrl", "{{current.lang}}/{{current.slug}}")
-		self.feedurl = main.getConfigValue("konstrukteur.blog.feedUrl", "feed.{{current.lang}}.xml")
+		self.__postUrl = pystache.parse(main.getConfigValue("konstrukteur.blog.postUrl", "{{current.lang}}/blog/{{current.slug}}"))
+		self.__pageUrl = pystache.parse(main.getConfigValue("konstrukteur.pageUrl", "{{current.lang}}/{{current.slug}}"))
+		self.__feedUrl = pystache.parse(main.getConfigValue("konstrukteur.blog.feedUrl", "feed.{{current.lang}}.xml"))
 		self.extensions = main.getConfigValue("konstrukteur.extensions", ["markdown", "html"])
 		self.theme = main.getConfigValue("konstrukteur.theme", main.getName())
 		self.defaultLanguage = main.getConfigValue("konstrukteur.defaultLanguage", "en")
+		self.__fileManager = FileManager.FileManager(self.__profile)
 
 
-	def build(self, profile):
+	def build(self):
 		""" Build static website """
-
-		# When requesting running as a daemon, we need to pause the session for not blocking the cache
-		if self.__regenerate:
-			session.pause()
 
 		Console.info("Executing Konstrukteur...")
 		Console.indent()
 
+		# Path configuration
+		# TODO: Use Jasy configuration instead
 		self.__templatePath = os.path.join("source", "template")
 		self.__contentPath = os.path.join("source", "content")
 		self.__sourcePath = os.path.join("source")
-
-		self.__profile = profile
-		self.__fileManager = FileManager.FileManager(profile)
 
 		if not os.path.exists(self.__templatePath):
 			raise RuntimeError("Path to templates not found : %s" % self.__templatePath)
 		if not os.path.exists(self.__contentPath):
 			raise RuntimeError("Path to content not found : %s" % self.__contentPath)
 
+		# A theme could be any project registered in the current session
 		if self.theme:
-			theme = session.getProjectByName(self.theme)
-			if not theme:
+			themeProject = session.getProjectByName(self.theme)
+			if not themeProject:
 				raise RuntimeError("Theme '%s' not found" % self.theme)
-
-		self.__postUrl = pystache.parse(self.posturl)
-		self.__pageUrl = pystache.parse(self.pageurl)
-		self.__feedUrl = pystache.parse(self.feedurl)
 
 		self.__parseTemplate()
 		self.__build()
 
+		# Start actual file watcher
 		if self.__regenerate:
+			# We need to pause the session for not blocking the cache
+			self.__session.pause()
+
 			fileChangeEventHandler = konstrukteur.FileWatcher.FileChangeEventHandler()
+
 			observer = Observer()
 			observer.schedule(fileChangeEventHandler, self.__sourcePath, recursive=True)
 			observer.start()
+
 			try:
 				Console.info("Waiting for file changes (abort with CTRL-C)")
 				while True:
@@ -141,10 +143,11 @@ class Konstrukteur:
 						self.__build()
 			except KeyboardInterrupt:
 				observer.stop()
+
 			observer.join()
 
-			# When requesting running as a daemon, we need to resume the session after exciting
-			session.resume()
+			# Resume the session after exciting
+			self.__session.resume()
 
 		Console.outdent()
 

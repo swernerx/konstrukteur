@@ -30,5 +30,5 @@ def build(profile, regenerate = False):
 
 	profile.addCommand("part.url", getPartUrl, "url")
 
-	site = Konstrukteur.Konstrukteur(regenerate=regenerate)
-	site.build(profile)
+	site = Konstrukteur.Konstrukteur(profile, regenerate=regenerate)
+	site.build()
