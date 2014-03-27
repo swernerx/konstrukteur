@@ -66,8 +66,6 @@ class ContentParser:
 		else:
 			parsed["slug"] = Util.fixSlug(parsed["title"])
 
-		parsed["content"] = Util.fixCoreTemplating(parsed["content"])
-
 		if not "status" in parsed:
 			parsed["status"] = "published"
 		if not "pos" in parsed:
