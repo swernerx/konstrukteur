@@ -13,16 +13,23 @@ sys.path.insert(0,path)
 
 __all__ = ["build"]
 
+import re
+import os.path
+import dateutil.parser
+import dateutil.tz
+import datetime
+import time
+import pystache
+import itertools
+
 from jasy.env.State import session
+
 import jasy.core.Console as Console
 import jasy.core.FileManager as FileManager
 import jasy.core.Cache as Cache
 
-import pystache
-import os.path
-import glob
-import re
-import operator
+from watchdog.observers import Observer
+from watchdog.events import LoggingEventHandler
 
 import konstrukteur.HtmlParser
 import konstrukteur.HtmlBeautifier
@@ -31,16 +38,6 @@ import konstrukteur.FileWatcher
 import konstrukteur.ContentParser
 import konstrukteur.Util
 
-import dateutil.parser
-import dateutil.tz
-
-import datetime
-import time
-
-from watchdog.observers import Observer
-from watchdog.events import LoggingEventHandler
-
-import itertools
 
 
 COMMAND_REGEX = re.compile(r"{{@(?P<cmd>\S+?)(?:\s+?(?P<params>.+?))}}")
