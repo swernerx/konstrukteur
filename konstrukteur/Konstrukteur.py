@@ -100,7 +100,7 @@ class Konstrukteur:
 	def build(self):
 		""" Build static website """
 
-		Console.info("Executing Konstrukteur...")
+		Console.info("Intializing Konstrukteur...")
 		Console.indent()
 
 		# Path configuration
@@ -155,10 +155,13 @@ class Konstrukteur:
 	def __build(self):
 		""" Build static website """
 
+		Console.info("Building website....")
+		Console.indent()
+
 		self.__parseContent()
 		self.__outputContent()
 
-		Console.info("Done processing website")
+		Console.info("Website successfully build!")
 
 
 	def __fixJasyCommands(self, content):
