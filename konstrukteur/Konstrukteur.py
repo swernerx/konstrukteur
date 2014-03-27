@@ -50,25 +50,29 @@ COMMAND_REGEX = re.compile(r"{{@(?P<cmd>\S+?)(?:\s+?(?P<params>.+?))}}")
 def build(regenerate, profile):
 	""" Build static website """
 
+	# When requesting running as a daemon, we need to pause the session for not blocking the cache
 	if regenerate:
 		session.pause()
 
-	app = Konstrukteur()
-	app.config = session.getMain().getConfigValue("konstrukteur")
+	# Create a new site instance
+	site = Konstrukteur()
 
-	app.sitename = session.getMain().getConfigValue("konstrukteur.site.name", "Test website")
-	app.siteurl = session.getMain().getConfigValue("konstrukteur.site.url", "//localhost")
-	app.posturl = session.getMain().getConfigValue("konstrukteur.blog.postUrl", "{{current.lang}}/blog/{{current.slug}}")
-	app.pageurl = session.getMain().getConfigValue("konstrukteur.pageUrl", "{{current.lang}}/{{current.slug}}")
-	app.feedurl = session.getMain().getConfigValue("konstrukteur.blog.feedUrl", "feed.{{current.lang}}.xml")
-	app.extensions = session.getMain().getConfigValue("konstrukteur.extensions", ["markdown", "html"])
-	app.theme = session.getMain().getConfigValue("konstrukteur.theme", session.getMain().getName())
-	app.defaultLanguage = session.getMain().getConfigValue("konstrukteur.defaultLanguage", "en")
+	# Importing configuration from project
+	site.config = session.getMain().getConfigValue("konstrukteur")
+	site.sitename = session.getMain().getConfigValue("konstrukteur.site.name", "Test website")
+	site.siteurl = session.getMain().getConfigValue("konstrukteur.site.url", "//localhost")
+	site.posturl = session.getMain().getConfigValue("konstrukteur.blog.postUrl", "{{current.lang}}/blog/{{current.slug}}")
+	site.pageurl = session.getMain().getConfigValue("konstrukteur.pageUrl", "{{current.lang}}/{{current.slug}}")
+	site.feedurl = session.getMain().getConfigValue("konstrukteur.blog.feedUrl", "feed.{{current.lang}}.xml")
+	site.extensions = session.getMain().getConfigValue("konstrukteur.extensions", ["markdown", "html"])
+	site.theme = session.getMain().getConfigValue("konstrukteur.theme", session.getMain().getName())
+	site.defaultLanguage = session.getMain().getConfigValue("konstrukteur.defaultLanguage", "en")
+	site.regenerate = not regenerate == False
 
-	app.regenerate = not regenerate == False
+	# Run the actual build
+	site.build(profile)
 
-	app.build(profile)
-
+	# When requesting running as a daemon, we need to resume the session after exciting
 	if regenerate:
 		session.resume()
 
