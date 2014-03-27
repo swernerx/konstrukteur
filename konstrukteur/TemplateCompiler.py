@@ -17,6 +17,7 @@
 __all__ = ["compile"]
 
 import jasy.template.Parser as Parser
+import konstrukteur.Template as Template
 
 accessTags = [
     "#",     # go into section / loop start
@@ -33,6 +34,8 @@ innerTags = [
     "^"
 ]
 
+indentString = "  "
+
 def escapeContent(content):
     return content.replace("\"", "\\\"").replace("\n", "\\n")
 
@@ -41,14 +44,15 @@ def escapeMatcher(str):
     return str.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\\n").replace("\r", "\\\r")
 
 
-def walk(node, labels, nostrip):
+def walk(node, labels, nostrip, indent):
     code = ""
+    prefix = indent * indentString
 
     for current in node:
         if type(current) == str:
-            code += 'buf+="' + escapeMatcher(current) + '";\n'
+            code += prefix + 'buf += "' + escapeMatcher(current) + '"\n'
         elif current["tag"] == "\n":
-            code += 'buf+="\\n";\n'
+            code += prefix + 'buf += "\\n"\n'
         else:
             tag = current["tag"]
             name = current["name"]
@@ -65,36 +69,40 @@ def walk(node, labels, nostrip):
                 accessorCode = '"' + escaped + '",' + str(accessor) + ',data'
 
                 if tag in innerTags:
-                    innerCode = walk(current["nodes"], labels, nostrip)
+                    innerCode = walk(current["nodes"], labels, nostrip, indent+1)
 
                 if tag == "?":
-                    code += 'if(self.__has(' + accessorCode + ')){\n' + innerCode + '}\n'
+                    code += prefix + 'if self.__has(' + accessorCode + '):\n' + innerCode + '\n'
                 elif tag == "^":
-                    code += 'if(!self.__has(' + accessorCode + ')){\n' + innerCode + '}\n'
+                    code += prefix + 'if not self.__has(' + accessorCode + '):\n' + innerCode + '\n'
                 elif tag == "#":
-                    code += 'self.__section(' + accessorCode + ', partials, labels, function(data,partials,labels){\n' + innerCode + '\n});\n'
+                    code += prefix + 'self.__section(' + accessorCode + ', partials, labels, function(data, partials, labels){\n' + innerCode + '\n});\n'
                 elif tag == "=":
-                    code += 'buf += self.__data(' + accessorCode + ');\n'
+                    code += prefix + 'buf += self.__data(' + accessorCode + ')\n'
                 elif tag == "$":
-                    code += 'buf += self.__variable(' + accessorCode + ');\n';
+                    code += prefix + 'buf += self.__variable(' + accessorCode + ')\n';
 
             elif tag == ">":
-                code += 'buf += self.__partial("' + escaped + '",data, partials, labels);\n'
+                code += prefix + 'buf += self.__partial("' + escaped + '",data, partials, labels)\n'
             elif tag == "_":
                 if labels and escaped in labels:
-                    code += walk(Parser.parse(labels[escaped], True), labels);
+                    code += walk(Parser.parse(labels[escaped], True), labels, indent+1);
                 else:
-                    code += 'buf += self.__label("' + escaped + '", data, partials, labels);\n'
+                    code += prefix + 'buf += self.__label("' + escaped + '", data, partials, labels)\n'
 
     return code
 
 
 def compile(text, labels=[], nostrip=False, name=None):
     tree = Parser.parse(text, nostrip)
-    wrapped = 'buf = "";' + walk(tree, labels, nostrip) + 'return buf;'
+    wrapped = indentString + 'buf = ""\n' + walk(tree, labels, nostrip, 1) + "\n" + indentString + 'return buf'
 
-    if name is None:
-        name = "null"
+    code = "def render(self, data, partials, labels):\n%s" % wrapped
+    print("CODE")
+    print(code)
 
-    return "def render(data, partials, labels){%s}\njasy.template.Template(render, null, %s)" % (wrapped, name)
+    print("")
+    print("EVALUATING...")
+    exec(code)
+    return Template.Template(render, text, name)
 
