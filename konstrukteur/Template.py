@@ -15,7 +15,7 @@ import re
 hasOwnProperty = Object.prototype.hasOwnProperty;
 undef = None
 
-htmlChars = re.compile("/[&<>\"\']", "g");
+htmlChars = re.compile("/[&<>\"\']")
 htmlMap = {
     '&': '&amp;',
     '<': '&lt;',
@@ -73,116 +73,95 @@ class Template:
         self.__text = text;
         self.__name = name;
 
-        #
-        # {String} Public render method which transforms the stored template text using the @data {Map},
-        # runtime specific @partials {Map?null} and @labels {Map?null}.
-        #
-        def render(self, data, partials, labels):
 
-            try:
-                return self.__render(data, partials, labels);
-            except:
-                Console.error("Unable to render template " + (self.__name||""));
-                throw ex;
+    def render(self, data, partials, labels):
+        """
+        {String} Public render method which transforms the stored template text using the @data {Map},
+        runtime specific @partials {Map?null} and @labels {Map?null}.
+        """
 
-
-        #
-        # {String} Outputs the @key {String} of @data {Map}
-        # using the given accessor @method {Integer} as HTML escaped variable.
-        #
-        def __variable(self, key, method, data):
-            var value = accessor[method](key, data);
-            var str = value == null ? "" : "" + value;
-
-            return str.replace(htmlChars, htmlEscape);
+        try:
+            return self.__render(data, partials, labels);
+        except:
+            Console.error("Unable to render template " + (self.__name or ""));
+            throw ex;
 
 
-        #
-        # {String} Outputs the @key {String} of @data {Map}
-        # using the given accessor @method {Integer} as raw data.
-        #
-        def __data(self, key, method, data, escape):
-            var value = accessor[method](key, data);
-            return value == null ? "" : "" + value;
+    def __variable(self, key, method, data):
+        """
+        {String} Outputs the @key {String} of @data {Map}
+        using the given accessor @method {Integer} as HTML escaped variable.
+        """
+
+        value = accessor[method](key, data);
+        if value is None:
+            return ""
+
+        return htmlChars.sub(str(value), htmlEscape)
 
 
-        #
-        # {String} Tries to find a partial in the current scope and render it
-        #
-        def __partial(self, name, data, partials, labels):
+    def __data(self, key, method, data, escape):
+        """
+        {String} Outputs the @key {String} of @data {Map}
+        using the given accessor @method {Integer} as raw data.
+        """
 
-            if (partials && hasOwnProperty.call(partials, name))
-            {
-                return partials[name].__render(data, partials, labels);
-            }
-            else
-            {
-                if (jasy.Env.isSet("debug")) {
-                    self.warn("Could not find partial: " + name);
-                }
+        value = accessor[method](key, data);
+        if value is None:
+            return ""
 
-                return "";
-            }
+        return str(value)
 
 
-        #
-        # {String} Tries to find a dynamic label by its @name {String} and renders
-        # the resulting label text like a partial template with the current
-        # @data {var}, defined @partials {Map} and other @labels {Map}.
-        #
-        def __label(self, name, data, partials, labels):
-            var text = labels && labels[name];
-            if (text == null) {
-                return "";
-            }
+    def __partial(self, name, data, partials, labels):
+        """
+        {String} Tries to find a partial in the current scope and render it
+        """
 
-            // Automatically execute dynamic labels e.g. trn() with plural strings
-            if (typeof text == "function") {
-                text = text();
-            }
+        if partials and name on partials:
+            return partials[name].__render(data, partials, labels);
 
-            var compiledLabel = core.template.Compiler.compile(text);
-            return compiledLabel.__render(data, partials, labels);
+        Console.warn("Could not find partial: " + name);
+        return "";
 
 
-        #
-        # Renders a section using the given @data {var}, user
-        # defined @partials {Map} and @labels {Map} and a @section {Function} specific renderer.
-        #
-        def __section(self, key, method, data, partials, labels, section):
+    def __label(self, name, data, partials, labels):
+        """
+        {String} Tries to find a dynamic label by its @name {String} and renders
+        the resulting label text like a partial template with the current
+        @data {var}, defined @partials {Map} and other @labels {Map}.
+        """
 
-            value = accessor[method](key, data);
-            if value != undef:
+        text = None
+        if labels is not None and name in labels:
+            text = labels[name]
 
-                // Auto cast
-                if (value.toArray) {
-                    value = value.toArray();
-                }
+        if not text:
+            return ""
 
-                if (value instanceof Array)
-                {
-                    for (var i=0, l=value.length; i<l; i++) {
-                        section.call(this, value[i], partials, labels);
-                    }
-                }
-                else
-                {
-                    section.call(this, value, partials, labels);
-                }
+        compiledLabel = TemplateCompiler.compile(text)
+        return compiledLabel.__render(data, partials, labels)
 
 
-        #
-        # {Boolean} Whether the given @key {String} has valid content inside @data {Map}
-        # using the given accessor @method {Integer}.
-        #
-        def _has(self, key, method, data):
+    def __section(self, key, method, data, partials, labels, section):
+        """
+        Renders a section using the given @data {var}, user
+        defined @partials {Map} and @labels {Map} and a @section {Function} specific renderer.
+        """
 
-            value = accessor[method](key, data)
+        value = accessor[method](key, data);
+        if value is not None:
+            if type(value) is list:
+                for pos, entry in enumerate(value):
+                    section(self, value[pos], partials, labels)
+            else:
+                section(self, value, partials, labels)
 
-            if (value instanceof Array) {
-                return value.length > 0;
-            } else if (value != null && value.isEmpty) {
-                return !value.isEmpty();
-            } else {
-                return value === '' || !!value
-            }
+
+    def __has(self, key, method, data):
+        """
+        {Boolean} Whether the given @key {String} has valid content inside @data {Map}
+        using the given accessor @method {Integer}.
+        """
+
+        return bool(accessor[method](key, data))
