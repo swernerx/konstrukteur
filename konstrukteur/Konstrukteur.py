@@ -42,8 +42,6 @@ from watchdog.events import LoggingEventHandler
 
 import itertools
 
-from unidecode import unidecode
-
 
 COMMAND_REGEX = re.compile(r"{{@(?P<cmd>\S+?)(?:\s+?(?P<params>.+?))}}")
 
@@ -73,6 +71,7 @@ class Konstrukteur:
 	__safeRenderer = None
 	__fileManager = None
 	__locale = None
+
 
 	def __init__(self, regenerate=False, project=None):
 		# Figuring out main project
