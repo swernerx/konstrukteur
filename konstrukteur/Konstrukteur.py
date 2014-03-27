@@ -27,6 +27,7 @@ from jasy.env.State import session
 import jasy.core.Console as Console
 import jasy.core.FileManager as FileManager
 import jasy.core.Cache as Cache
+import jasy.template.Parser as TemplateParser
 
 from watchdog.observers import Observer
 from watchdog.events import LoggingEventHandler
@@ -37,6 +38,11 @@ import konstrukteur.Language
 import konstrukteur.FileWatcher
 import konstrukteur.ContentParser
 import konstrukteur.Util
+
+
+import konstrukteur.TemplateCompiler as TemplateCompiler
+
+
 
 
 
@@ -193,7 +199,14 @@ class Konstrukteur:
 			templates = project.getItems("jasy.Template")
 			if templates:
 				for name, item in templates.items():
-					self.__templates[name] = item
+					self.__templates[name] = item.getText()
+
+
+		for name in self.__templates:
+			content = self.__templates[name]
+			# tree = TemplateParser.parse(content)
+			compiled = TemplateCompiler.compile(content)
+			self.__templates[name] = compiled
 
 		# Create two rendereres for different use cases
 		self.__renderer = pystache.Renderer(partials=self.__templates, escape=lambda u: u)
