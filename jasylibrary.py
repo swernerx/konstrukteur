@@ -15,19 +15,19 @@ def build(profile, regenerate = False):
 	def getPartUrl(part, type):
 		folder = ""
 		if type == "css":
-			if hasattr(profile, "getCssFolder"):
-				# Old jasy < 1.5-beta4
-				folder = profile.getCssFolder()
-			else:
-				# New jasy >= 1.5-beta4
-				folder = profile.getCssOutputFolder()
+			folder = profile.getCssOutputFolder()
+		elif type == "css":
+			folder = profile.getJsOutputFolder()
+		elif type == "template":
+			folder = profile.getTemplateOutputFolder()
+		else:
+			raise Exception("Unsupported part type: %s" % type)
 
 		outputPath = os.path.relpath(os.path.join(profile.getDestinationPath(), folder), profile.getWorkingPath())
-		filename = profile.expandFileName("%s/%s-{{id}}.%s" % (outputPath, part, type))
+		fileName = profile.expandFileName("%s/%s-{{id}}.%s" % (outputPath, part, type))
 
-		return filename
+		return fileName
 
 	profile.addCommand("part.url", getPartUrl, "url")
 
-	#for permutation in profile.permutate():
 	konstrukteur.Konstrukteur.build(regenerate, profile)
