@@ -4,7 +4,7 @@ filename = inspect.getframeinfo(inspect.currentframe()).filename
 path = os.path.dirname(os.path.abspath(filename))
 sys.path.append(path)
 
-import konstrukteur.Konstrukteur
+import konstrukteur.Konstrukteur as Konstrukteur
 import jasy.asset.Manager
 
 
@@ -30,4 +30,5 @@ def build(profile, regenerate = False):
 
 	profile.addCommand("part.url", getPartUrl, "url")
 
-	konstrukteur.Konstrukteur.build(regenerate, profile)
+	site = Konstrukteur.Konstrukteur(regenerate=regenerate)
+	site.build(profile)

@@ -47,38 +47,6 @@ from unidecode import unidecode
 
 COMMAND_REGEX = re.compile(r"{{@(?P<cmd>\S+?)(?:\s+?(?P<params>.+?))}}")
 
-def build(regenerate, profile):
-	""" Build static website """
-
-	# When requesting running as a daemon, we need to pause the session for not blocking the cache
-	if regenerate:
-		session.pause()
-
-	# Figuring out main project
-	main = session.getMain()
-
-	# Create a new site instance
-	site = Konstrukteur()
-
-	# Importing configuration from project
-	site.config = main.getConfigValue("konstrukteur")
-	site.sitename = main.getConfigValue("konstrukteur.site.name", "Test website")
-	site.siteurl = main.getConfigValue("konstrukteur.site.url", "//localhost")
-	site.posturl = main.getConfigValue("konstrukteur.blog.postUrl", "{{current.lang}}/blog/{{current.slug}}")
-	site.pageurl = main.getConfigValue("konstrukteur.pageUrl", "{{current.lang}}/{{current.slug}}")
-	site.feedurl = main.getConfigValue("konstrukteur.blog.feedUrl", "feed.{{current.lang}}.xml")
-	site.extensions = main.getConfigValue("konstrukteur.extensions", ["markdown", "html"])
-	site.theme = main.getConfigValue("konstrukteur.theme", main.getName())
-	site.defaultLanguage = main.getConfigValue("konstrukteur.defaultLanguage", "en")
-	site.regenerate = not regenerate == False
-
-	# Run the actual build
-	site.build(profile)
-
-	# When requesting running as a daemon, we need to resume the session after exciting
-	if regenerate:
-		session.resume()
-
 class Konstrukteur:
 	""" Core application class for Konstrukteur """
 
@@ -89,10 +57,10 @@ class Konstrukteur:
 	feedurl = None
 	extensions = None
 	theme = None
-	regenerate = None
 	defaultLanguage = None
 	config = None
 
+	__regenerate = False
 	__templates = None
 	__pages = None
 	__languages = None
@@ -106,16 +74,36 @@ class Konstrukteur:
 	__fileManager = None
 	__locale = None
 
-	def __init__(self):
+	def __init__(self, regenerate=False, project=None):
+		# Figuring out main project
+		main = project or session.getMain()
+
 		self.__locale = {}
 		self.__commandReplacer = []
 		self.__id = 0
 		self.__templates = {}
-		self.__cache = session.getMain().getCache()
+		self.__regenerate = not regenerate == False
+		self.__cache = main.getCache()
+
+		# Importing configuration from project
+		self.config = main.getConfigValue("konstrukteur")
+		self.sitename = main.getConfigValue("konstrukteur.site.name", "Test website")
+		self.siteurl = main.getConfigValue("konstrukteur.site.url", "//localhost")
+		self.posturl = main.getConfigValue("konstrukteur.blog.postUrl", "{{current.lang}}/blog/{{current.slug}}")
+		self.pageurl = main.getConfigValue("konstrukteur.pageUrl", "{{current.lang}}/{{current.slug}}")
+		self.feedurl = main.getConfigValue("konstrukteur.blog.feedUrl", "feed.{{current.lang}}.xml")
+		self.extensions = main.getConfigValue("konstrukteur.extensions", ["markdown", "html"])
+		self.theme = main.getConfigValue("konstrukteur.theme", main.getName())
+		self.defaultLanguage = main.getConfigValue("konstrukteur.defaultLanguage", "en")
 
 
 	def build(self, profile):
 		""" Build static website """
+
+		# When requesting running as a daemon, we need to pause the session for not blocking the cache
+		if self.__regenerate:
+			session.pause()
+
 		Console.info("Executing Konstrukteur...")
 		Console.indent()
 
@@ -143,7 +131,7 @@ class Konstrukteur:
 		self.__parseTemplate()
 		self.__build()
 
-		if self.regenerate:
+		if self.__regenerate:
 			fileChangeEventHandler = konstrukteur.FileWatcher.FileChangeEventHandler()
 			observer = Observer()
 			observer.schedule(fileChangeEventHandler, self.__sourcePath, recursive=True)
@@ -158,6 +146,9 @@ class Konstrukteur:
 			except KeyboardInterrupt:
 				observer.stop()
 			observer.join()
+
+			# When requesting running as a daemon, we need to resume the session after exciting
+			session.resume()
 
 		Console.outdent()
 
