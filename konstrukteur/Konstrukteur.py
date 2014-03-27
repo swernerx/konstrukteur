@@ -80,7 +80,6 @@ class Konstrukteur:
 		self.__locale = {}
 		self.__commandReplacer = []
 		self.__id = 0
-		self.__templates = {}
 		self.__regenerate = not regenerate == False
 		self.__cache = main.getCache()
 
@@ -120,8 +119,8 @@ class Konstrukteur:
 			if not themeProject:
 				raise RuntimeError("Theme '%s' not found" % self.theme)
 
-		self.__parseTemplate()
-		self.__build()
+		self.__initializeTemplates()
+		self.__generateOutput()
 
 		# Start actual file watcher
 		if self.__regenerate:
@@ -140,7 +139,7 @@ class Konstrukteur:
 					time.sleep(1)
 					if fileChangeEventHandler.dirty:
 						fileChangeEventHandler.dirty = False
-						self.__build()
+						self.__generateOutput()
 			except KeyboardInterrupt:
 				observer.stop()
 
@@ -152,7 +151,7 @@ class Konstrukteur:
 		Console.outdent()
 
 
-	def __build(self):
+	def __generateOutput(self):
 		""" Build static website """
 
 		Console.info("Building website....")
@@ -185,16 +184,18 @@ class Konstrukteur:
 		return ".".join(s[:-1] + [sname])
 
 
-	def __parseTemplate(self):
+	def __initializeTemplates(self):
 		""" Process all templates to support jasy commands """
 
+		# Build a map of all known templates
+		self.__templates = {}
 		for project in session.getProjects():
 			templates = project.getItems("jasy.Template")
 			if templates:
-				for template, content in templates.items():
-					template = self.__fixTemplateName(template)
-					self.__templates[template] = konstrukteur.Util.fixCoreTemplating(self.__fixJasyCommands(content.getText()))
+				for name, item in templates.items():
+					self.__templates[name] = item
 
+		# Create two rendereres for different use cases
 		self.__renderer = pystache.Renderer(partials=self.__templates, escape=lambda u: u)
 		self.__safeRenderer = pystache.Renderer(partials=self.__templates)
 
