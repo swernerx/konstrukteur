@@ -41,6 +41,7 @@ import konstrukteur.Util
 
 
 import konstrukteur.TemplateCompiler as TemplateCompiler
+import konstrukteur.Template as Template
 
 
 
@@ -208,9 +209,11 @@ class Konstrukteur:
 			compiled = TemplateCompiler.compile(content)
 			self.__templates[name] = compiled
 
+			print("Compiled Template: ", name, "=>", compiled)
+
 		# Create two rendereres for different use cases
-		self.__renderer = pystache.Renderer(partials=self.__templates, escape=lambda u: u)
-		self.__safeRenderer = pystache.Renderer(partials=self.__templates)
+		#self.__renderer = pystache.Renderer(partials=self.__templates, escape=lambda u: u)
+		#self.__safeRenderer = pystache.Renderer(partials=self.__templates)
 
 
 	def __parseContent(self):
@@ -303,17 +306,6 @@ class Konstrukteur:
 
 		return sorted(pageList, key=lambda page: page["pos"])
 
-
-
-	def __jasyCommandsHandling(self, renderModel, filename):
-		oldWorkingPath = self.__profile.getWorkingPath()
-		self.__profile.setWorkingPath(os.path.dirname(filename))
-
-		for id, cmd, params in self.__commandReplacer:
-			result, type = self.__profile.executeCommand(cmd, params)
-			# renderModel[id] = result
-
-		self.__profile.setWorkingPath(oldWorkingPath)
 
 
 	def __createPage(self, slug, title, content):
@@ -412,15 +404,7 @@ class Konstrukteur:
 
 				# Check cache validity
 				if resultContent is None:
-					self.__refreshUrls(items, currentItem, urlGenerator)
-					if contentType == "archive":
-						for cp in items:
-							self.__refreshUrls(currentItem["post"], cp, self.__postUrl)
-
-					self.__jasyCommandsHandling(renderModel, outputFilename)
-
-					outputContent = self.__processOutputContent(renderModel, contentType)
-					resultContent = konstrukteur.HtmlBeautifier.beautify(outputContent)
+					resultContent = self.__processOutputContent(renderModel, contentType)
 
 					# Store result into cache when caching is enabled (non archive pages only)
 					if cacheId:
