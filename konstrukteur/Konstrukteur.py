@@ -376,13 +376,6 @@ class Konstrukteur:
 		Console.info("Generating public files...")
 		Console.indent()
 
-		# Post process dates as iso string
-		# TODO: Move to parser engine
-		if self.__posts:
-			for post in self.__posts:
-				post["date"] = post["date"].isoformat()
-
-
 		# Process all content types
 		# Posts must be generated before archive
 		for contentType in ["post", "archive", "page"]:
@@ -442,8 +435,8 @@ class Konstrukteur:
 					resultContent = 123
 
 					# Store result into cache when caching is enabled (non archive pages only)
-					if cacheId:
-						self.__cache.store(cacheId, resultContent, itemMtime)
+					#if cacheId:
+					#	self.__cache.store(cacheId, resultContent, itemMtime)
 
 				# Write actual output file
 				self.__fileManager.writeFile(outputFilename, resultContent)
