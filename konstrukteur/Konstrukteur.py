@@ -72,6 +72,16 @@ def replaceFields(input, data):
 	return FIELDS_REGEX.sub(replacer, input)
 
 
+class CustomJsonEncoder(json.JSONEncoder):
+	def default(self, obj):
+		if callable(obj):
+			return "<callable>"
+
+		return json.JSONEncoder.default(self, obj)
+
+def stringifyData(data):
+	return json.dumps(data, sort_keys=True, indent=2, separators=(',', ': '), cls=CustomJsonEncoder)
+
 
 
 COMMAND_REGEX = re.compile(r"{{@(?P<cmd>\S+?)(?:\s+?(?P<params>.+?))}}")
@@ -386,7 +396,7 @@ class Konstrukteur:
 				urlTemplate = self.__pageUrl
 				items = self.__pages
 
-
+			# Preparing template
 			templateName = "%(theme)s.%(type)s" % {
 				"theme": self.theme,
 				"type": contentType[0].upper() + contentType[1:]
@@ -397,14 +407,18 @@ class Konstrukteur:
 
 			pageTemplate = self.__templates[templateName]
 
-
+			# Profile shorthands
 			profileId = self.__profile.getId()
 			destinationPath = self.__profile.getDestinationPath()
 
+			# Create individual output files
 			length = len(items)
 			for pos, currentItem in enumerate(items):
 				itemSlug = currentItem["slug"]
 				itemMtime = currentItem["mtime"]
+
+				print("DATA: ", stringifyData(currentItem))
+
 				Console.info("Generating %s %s/%s: %s...", contentType, pos+1, length, itemSlug)
 
 				renderModel = self.__generateRenderModel(self.__pages, currentItem, contentType)
@@ -420,7 +434,7 @@ class Konstrukteur:
 					cacheId = None
 					resultContent = None
 				else:
-					cacheId = "%s-%s-%s-%s" % (contentType, itemSlug, profileId)
+					cacheId = "%s-%s-%s" % (contentType, itemSlug, profileId)
 					resultContent = self.__cache.read(cacheId, itemMtime)
 
 				# Check cache validity
