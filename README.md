@@ -4,6 +4,8 @@
 Based upon the magic **[Jasy][2]** - A powerful Python3 based Web Tooling Framework.
 
 [![Build Status](https://travis-ci.org/fastner/konstrukteur.png?branch=master)](https://travis-ci.org/fastner/konstrukteur)
+[![Gittip](http://img.shields.io/gittip/wpbasti.png)](https://www.gittip.com/wpbasti/)
+[![Gittip](http://img.shields.io/gittip/fastner.png)](https://www.gittip.com/fastner/)
 
 ## Getting started
 
@@ -20,7 +22,7 @@ Set up a virtualenv environment and activate it
 Install konstrukteur via pip
 
     (webdev):~$ pip install konstrukteur
-    
+
 Now everything is set up in your development environment.
 
 ### Create website from skeleton
@@ -33,7 +35,7 @@ Konstrukteur now has created a new website project called *mynewweb*.
 
 ### Build website
 
-The default skeleton includes a very simple theme and a web page in english 
+The default skeleton includes a very simple theme and a web page in english
 and german. Build your web site into build directory
 
     (webdev):~$ cd mynewweb
@@ -41,9 +43,9 @@ and german. Build your web site into build directory
 
 ### Result
 
-The generated web site is now located at *~/mynewweb/build*. You can copy 
-this directory to your web server. A better way is to add your deployment process 
-to jasyscript.py. 
+The generated web site is now located at *~/mynewweb/build*. You can copy
+this directory to your web server. A better way is to add your deployment process
+to jasyscript.py.
 
 Take a look at [Jasy buildscript documentation][1].
 
