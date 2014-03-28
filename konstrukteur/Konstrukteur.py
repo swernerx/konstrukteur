@@ -381,16 +381,10 @@ class Konstrukteur:
 				items = self.__pages
 
 			length = len(items)
-			for position, currentItem in enumerate(items):
-				Console.info("Generating %s %s/%s: %s...", contentType, position+1, length, currentItem["slug"])
+			for pos, currentItem in enumerate(items):
+				Console.info("Generating %s %s/%s: %s...", contentType, pos+1, length, currentItem["slug"])
 
 				renderModel = self.__generateRenderModel(self.__pages, currentItem, contentType)
-
-				if "url" in currentItem:
-					processedFilename = currentItem["url"]
-				else:
-					processedFilename = self.__renderer.render(urlGenerator, renderModel)
-
 				outputFilename = self.__profile.expandFileName(os.path.join(self.__profile.getDestinationPath(), processedFilename))
 
 				# Use cache for speed-up re-runs
