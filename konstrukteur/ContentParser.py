@@ -16,7 +16,7 @@ import konstrukteur.MarkdownParser
 class ContentParser:
 	""" Content parser class for Konstrukteur """
 
-	def __init__(self, extensions, fixJasyCommands, defaultLanguage):
+	def __init__(self, extensions, defaultLanguage):
 		self.__extensions = extensions
 		self.__extensionParser = {
 			"html" : konstrukteur.HtmlParser,
@@ -27,7 +27,6 @@ class ContentParser:
 
 		self.__id = 1
 		self.__commandReplacer = []
-		self.__fixJasyCommands = fixJasyCommands
 		self.__languages = {}
 		self.__defaultLanguage = defaultLanguage
 
@@ -57,10 +56,6 @@ class ContentParser:
 
 
 	def postProcess(self, parsed, filename, languages):
-		for key, value in parsed.items():
-			if type(value) is str:
-				parsed[key] = self.__fixJasyCommands(value)
-
 		if "slug" in parsed:
 			parsed["slug"] = Util.fixSlug(parsed["slug"])
 		else:

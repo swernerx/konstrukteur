@@ -44,6 +44,33 @@ import konstrukteur.TemplateCompiler as TemplateCompiler
 import konstrukteur.Template as Template
 
 
+FIELDS_REGEX = re.compile(r"{{([a-zA-Z][a-zA-Z0-9\.]+)}}")
+
+
+
+def replaceFields(input, data):
+	def replacer(match):
+		key = match.group(1)
+		if key in data:
+			return data[key]
+		elif "." in key:
+			current = data
+			splits = key.split(".")
+			for split in splits:
+				if split in current:
+					current = current[split]
+				else:
+					current = None
+					break
+
+			if current is not None:
+				return current
+
+		Console.warn("No value for key: %s" % key)
+		return match.group(0)
+
+	return FIELDS_REGEX.sub(replacer, input)
+
 
 
 
@@ -70,6 +97,7 @@ class Konstrukteur:
 	__postUrl = None
 	__pageUrl = None
 	__feedUrl = None
+	__archiveUrl = None
 
 	__renderer = None
 	__safeRenderer = None
@@ -94,9 +122,12 @@ class Konstrukteur:
 		self.config = main.getConfigValue("konstrukteur")
 		self.sitename = main.getConfigValue("konstrukteur.site.name", "Test website")
 		self.siteurl = main.getConfigValue("konstrukteur.site.url", "//localhost")
-		self.__postUrl = pystache.parse(main.getConfigValue("konstrukteur.blog.postUrl", "{{current.lang}}/blog/{{current.slug}}"))
-		self.__pageUrl = pystache.parse(main.getConfigValue("konstrukteur.pageUrl", "{{current.lang}}/{{current.slug}}"))
-		self.__feedUrl = pystache.parse(main.getConfigValue("konstrukteur.blog.feedUrl", "feed.{{current.lang}}.xml"))
+
+		self.__pageUrl = main.getConfigValue("konstrukteur.pageUrl", "{{language}}/{{slug}}.html")
+		self.__postUrl = main.getConfigValue("konstrukteur.blog.postUrl", "{{language}}/blog/{{slug}}.html")
+		self.__archiveUrl = main.getConfigValue("konstrukteur.blog.archiveUrl", "archive.{{language}}-{{page}}.html")
+		self.__feedUrl = main.getConfigValue("konstrukteur.blog.feedUrl", "feed.{{language}}.xml")
+
 		self.extensions = main.getConfigValue("konstrukteur.extensions", ["markdown", "html"])
 		self.theme = main.getConfigValue("konstrukteur.theme", main.getName())
 		self.defaultLanguage = main.getConfigValue("konstrukteur.defaultLanguage", "en")
@@ -170,26 +201,6 @@ class Konstrukteur:
 		Console.info("Website successfully build!")
 
 
-	def __fixJasyCommands(self, content):
-		def commandReplacer(command):
-			cmd = command.group("cmd")
-			params = command.group("params").split()
-			id = "jasy_command_%s" % self.__id
-
-			self.__id += 1
-			self.__commandReplacer.append((id, cmd, params))
-
-			return "{{%s}}" % id
-
-		return re.sub(COMMAND_REGEX, commandReplacer, content)
-
-
-	def __fixTemplateName(self, name):
-		s = name.split(".")
-		sname = s[-1]
-		sname = sname[0].upper() + sname[1:]
-		return ".".join(s[:-1] + [sname])
-
 
 	def __initializeTemplates(self):
 		""" Process all templates to support jasy commands """
@@ -202,7 +213,6 @@ class Konstrukteur:
 				for name, item in templates.items():
 					self.__templates[name] = item.getText()
 
-
 		for name in self.__templates:
 			content = self.__templates[name]
 			# tree = TemplateParser.parse(content)
@@ -211,15 +221,11 @@ class Konstrukteur:
 
 			print("Compiled Template: ", name, "=>", compiled)
 
-		# Create two rendereres for different use cases
-		#self.__renderer = pystache.Renderer(partials=self.__templates, escape=lambda u: u)
-		#self.__safeRenderer = pystache.Renderer(partials=self.__templates)
-
 
 	def __parseContent(self):
 		""" Parse all content items in users content directory """
 
-		contentParser = konstrukteur.ContentParser.ContentParser(self.extensions, self.__fixJasyCommands, self.defaultLanguage)
+		contentParser = konstrukteur.ContentParser.ContentParser(self.extensions, self.defaultLanguage)
 		self.__languages = []
 
 		Console.info("Parsing content...")
@@ -309,7 +315,7 @@ class Konstrukteur:
 
 
 	def __createPage(self, slug, title, content):
-		contentParser = konstrukteur.ContentParser.ContentParser(self.extensions, self.__fixJasyCommands, self.defaultLanguage)
+		contentParser = konstrukteur.ContentParser.ContentParser(self.extensions, self.defaultLanguage)
 		return contentParser.generateFields({
 			"slug": slug,
 			"title": title,
@@ -371,21 +377,42 @@ class Konstrukteur:
 		# Posts must be generated before archive
 		for contentType in ["post", "archive", "page"]:
 			if contentType == "post":
-				urlGenerator = self.__postUrl
+				urlTemplate = self.__postUrl
 				items = self.__posts
 			elif contentType == "archive":
-				urlGenerator = self.config["blog"]["archiveUrl"]
+				urlTemplate = self.__archiveUrl
 				items = self.__generatePostIndex()
 			elif contentType == "page":
-				urlGenerator = self.__pageUrl
+				urlTemplate = self.__pageUrl
 				items = self.__pages
+
+
+			templateName = "%(theme)s.%(type)s" % {
+				"theme": self.theme,
+				"type": contentType[0].upper() + contentType[1:]
+			}
+
+			if not templateName in self.__templates:
+				raise RuntimeError("Template %s not found" % templateName)
+
+			pageTemplate = self.__templates[templateName]
+
+
+			profileId = self.__profile.getId()
+			destinationPath = self.__profile.getDestinationPath()
 
 			length = len(items)
 			for pos, currentItem in enumerate(items):
-				Console.info("Generating %s %s/%s: %s...", contentType, pos+1, length, currentItem["slug"])
+				itemSlug = currentItem["slug"]
+				itemMtime = currentItem["mtime"]
+				Console.info("Generating %s %s/%s: %s...", contentType, pos+1, length, itemSlug)
 
 				renderModel = self.__generateRenderModel(self.__pages, currentItem, contentType)
-				outputFilename = self.__profile.expandFileName(os.path.join(self.__profile.getDestinationPath(), processedFilename))
+				filePath = replaceFields(urlTemplate, currentItem)
+				Console.info("File Path: " + urlTemplate + "=>" + filePath)
+				outputFilename = os.path.join(destinationPath, filePath)
+
+				Console.info("Writing to: %s" % outputFilename)
 
 				# Use cache for speed-up re-runs
 				# Using for pages and posts only as archive pages depend on changes in any of these
@@ -393,16 +420,16 @@ class Konstrukteur:
 					cacheId = None
 					resultContent = None
 				else:
-					cacheId = "%s-%s-%s-%s" % (contentType, currentItem["slug"], currentItem["date"], self.__profile.getId())
-					resultContent = self.__cache.read(cacheId, currentItem["mtime"])
+					cacheId = "%s-%s-%s-%s" % (contentType, itemSlug, profileId)
+					resultContent = self.__cache.read(cacheId, itemMtime)
 
 				# Check cache validity
 				if resultContent is None:
-					resultContent = self.__processOutputContent(renderModel, contentType)
+					resultContent = 123
 
 					# Store result into cache when caching is enabled (non archive pages only)
 					if cacheId:
-						self.__cache.store(cacheId, resultContent, currentItem["mtime"])
+						self.__cache.store(cacheId, resultContent, itemMtime)
 
 				# Write actual output file
 				self.__fileManager.writeFile(outputFilename, resultContent)
@@ -457,22 +484,3 @@ class Konstrukteur:
 		res["languages"] = self.__mapLanguages(self.__languages, currentItem)
 
 		return res
-
-
-
-	def __processOutputContent(self, renderModel, type):
-		pageName = "%(theme)s.%(type)s" % {
-			"theme": self.theme,
-			"type": type[0].upper() + type[1:]
-		}
-
-		if not pageName in self.__templates:
-			raise RuntimeError("Template %s not found" % pageName)
-
-		pageTemplate = self.__templates[pageName]
-
-		#serialized = json.dumps(renderModel, sort_keys=True, indent=2, separators=(',', ': '))
-		#print("MODEL")
-		#print(serialized)
-
-		return self.__renderer.render(pageTemplate, renderModel)
