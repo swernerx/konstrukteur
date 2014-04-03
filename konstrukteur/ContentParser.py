@@ -46,7 +46,7 @@ class ContentParser:
 					Console.error("Error parsing file %s" % filename)
 					continue
 
-				self.postProcess(parsed, filename, languages)
+				self.__postProcess(parsed, filename, languages)
 				collection.append(parsed)
 
 		Console.info("Registered %s files.", len(collection))
@@ -55,7 +55,7 @@ class ContentParser:
 		return collection
 
 
-	def postProcess(self, parsed, filename, languages):
+	def __postProcess(self, parsed, filename, languages):
 		if "slug" in parsed:
 			parsed["slug"] = Util.fixSlug(parsed["slug"])
 		else:
@@ -63,16 +63,9 @@ class ContentParser:
 
 		if not "status" in parsed:
 			parsed["status"] = "published"
-		if not "pos" in parsed:
-			parsed["pos"] = 0
-		else:
-			parsed["pos"] = int(parsed["pos"])
 
 		if not "lang" in parsed:
 			parsed["lang"] = self.__defaultLanguage
-
-		if parsed["lang"] not in languages:
-			languages.append(parsed["lang"])
 
 		# Add modification time and short hash
 		parsed["mtime"] = os.path.getmtime(filename)
@@ -83,7 +76,11 @@ class ContentParser:
 
 		# Parse date if available
 		if "date" in parsed:
-			parsed["date"] = dateutil.parser.parse(parsed["date"]).replace(tzinfo=dateutil.tz.tzlocal())
+			parsed["date"] = dateutil.parser.parse(parsed["date"]).replace(tzinfo=dateutil.tz.tzlocal()).isoformat()
+
+		# Automatically register new languages
+		if parsed["lang"] not in languages:
+			languages.append(parsed["lang"])
 
 		return parsed
 
