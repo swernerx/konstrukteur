@@ -102,7 +102,7 @@ class Template:
         return htmlChars.sub(htmlEscape, str(value))
 
 
-    def _data(self, key, method, data, escape):
+    def _data(self, key, method, data):
         """
         {String} Outputs the @key {String} of @data {Map}
         using the given accessor @method {Integer} as raw data.
