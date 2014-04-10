@@ -233,35 +233,35 @@ class Konstrukteur:
 
 	def __generatePostIndex(self):
 		indexPages = []
-		itemsInIndex = self.config["blog"]["itemsInIndex"]
+		archiveItemsPerPage = self.config["blog"]["archiveItemsPerPage"]
 
-		if not type(self.config["blog"]["indexTitle"]) == dict:
+		if not type(self.config["blog"]["archiveTitle"]) == dict:
 			indexTitleLang = {}
 			for language in self.__languages:
-				indexTitleLang[language] = self.config["blog"]["indexTitle"]
-			self.config["blog"]["indexTitle"] = indexTitleLang
+				indexTitleLang[language] = self.config["blog"]["archiveTitle"]
+			self.config["blog"]["archiveTitle"] = indexTitleLang
 
 		for language in self.__languages:
 
-			indexTitle = self.config["blog"]["indexTitle"][language] if "indexTitle" in self.config["blog"] else "Index %d"
+			archiveTitle = self.config["blog"]["archiveTitle"][language] if "archiveTitle" in self.config["blog"] else "Index %d"
 			sortedPosts = sorted([post for post in self.__posts if post["lang"] == language], key=self.__postSorter)
 
 			pos = 0
 			page = 1
 			while pos < len(sortedPosts):
-				self.__renderer.render(indexTitle, {
+				self.__renderer.render(archiveTitle, {
 					"current" : {
 						"pageno" : page,
 						"lang" : language
 					}
 				})
-				indexPage = self.__createPage("index-%d" % page, indexTitle, "")
+				indexPage = self.__createPage("index-%d" % page, archiveTitle, "")
 				indexPages.append(indexPage)
 
-				indexPage["post"] = sortedPosts[pos:itemsInIndex+pos]
+				indexPage["post"] = sortedPosts[pos:archiveItemsPerPage+pos]
 				indexPage["pageno"] = page
 
-				pos += itemsInIndex
+				pos += archiveItemsPerPage
 				page += 1
 
 		return indexPages
@@ -296,29 +296,26 @@ class Konstrukteur:
 			if not templateName in self.__templates:
 				raise RuntimeError("Template %s not found" % templateName)
 
-			pageTemplate = self.__templates[templateName]
+			template = self.__templates[templateName]
 
 			# Profile shorthands
 			profileId = self.__profile.getId()
 			destinationPath = self.__profile.getDestinationPath()
 
 			# Create individual output files
-			length = len(items)
+			length = str(len(items))
+			padding = len(length)
+
 			for pos, currentItem in enumerate(items):
 				itemSlug = currentItem["slug"]
 				itemMtime = currentItem["mtime"]
 
-				print("DATA: ", Util.stringifyData(currentItem))
-
-				Console.info("Generating %s %s/%s: %s...", contentType, pos+1, length, itemSlug)
-
-				renderModel = self.__generateRenderModel(currentItem, contentType)
 				filePath = Util.replaceFields(urlTemplate, currentItem)
-
-				Console.info("File Path: " + urlTemplate + "=>" + filePath)
 				outputFilename = os.path.join(destinationPath, filePath)
 
-				Console.info("Writing to: %s" % outputFilename)
+				Console.info("Generating %s %s/%s: %s...", contentType, str(pos+1).zfill(padding), length, outputFilename)
+
+				renderModel = self.__generateRenderModel(currentItem, contentType)
 
 				# Use cache for speed-up re-runs
 				# Using for pages and posts only as archive pages depend on changes in any of these
@@ -328,14 +325,15 @@ class Konstrukteur:
 				else:
 					cacheId = "%s-%s-%s" % (contentType, itemSlug, profileId)
 					resultContent = self.__cache.read(cacheId, itemMtime)
+					resultContent = None
 
 				# Check cache validity
 				if resultContent is None:
-					resultContent = 123
+					resultContent = template.render(renderModel)
 
 					# Store result into cache when caching is enabled (non archive pages only)
-					#if cacheId:
-					#	self.__cache.store(cacheId, resultContent, itemMtime)
+					if cacheId:
+						self.__cache.store(cacheId, resultContent, itemMtime)
 
 				# Write actual output file
 				self.__fileManager.writeFile(outputFilename, resultContent)
