@@ -157,6 +157,9 @@ class Konstrukteur:
 		self.__contentPath = os.path.join("source", "content")
 		self.__sourcePath = os.path.join("source")
 
+		self.__pagePath = os.path.join(self.__contentPath, "page")
+		self.__postPath = os.path.join(self.__contentPath, "post")
+
 		if not os.path.exists(self.__templatePath):
 			raise RuntimeError("Path to templates not found : %s" % self.__templatePath)
 		if not os.path.exists(self.__contentPath):
@@ -241,8 +244,8 @@ class Konstrukteur:
 		Console.info("Parsing content...")
 		Console.indent()
 
-		self.__pages = contentParser.parse(os.path.join(self.__contentPath, "page"))
-		self.__posts = contentParser.parse(os.path.join(self.__contentPath, "post"))
+		self.__pages = contentParser.parse(self.__pagePath)
+		self.__posts = contentParser.parse(self.__postPath)
 		self.__languages = contentParser.getLanguages()
 
 		Console.outdent()
@@ -250,7 +253,6 @@ class Konstrukteur:
 		Console.indent()
 
 		for language in self.__languages:
-			Console.info("Adding language: %s", language)
 			if not language in self.__locale:
 				self.__locale[language] = konstrukteur.Language.LocaleParser(language)
 
