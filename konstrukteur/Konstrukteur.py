@@ -324,7 +324,7 @@ class Konstrukteur:
 					resultContent = None
 				else:
 					cacheId = "%s-%s-%s" % (contentType, itemSlug, profileId)
-					resultContent = self.__cache.read(cacheId, itemMtime)
+					#resultContent = self.__cache.read(cacheId, itemMtime)
 					resultContent = None
 
 				# Check cache validity
@@ -332,8 +332,8 @@ class Konstrukteur:
 					resultContent = template.render(renderModel)
 
 					# Store result into cache when caching is enabled (non archive pages only)
-					if cacheId:
-						self.__cache.store(cacheId, resultContent, itemMtime)
+					#if cacheId:
+					#	self.__cache.store(cacheId, resultContent, itemMtime)
 
 				# Write actual output file
 				self.__fileManager.writeFile(outputFilename, resultContent)
