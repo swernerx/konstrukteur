@@ -231,41 +231,46 @@ class Konstrukteur:
 		}, self.__languages)
 
 
-	def __generatePostIndex(self):
-		indexPages = []
+	def __generateArchive(self):
+		archivePages = []
 		archiveItemsPerPage = self.config["blog"]["archiveItemsPerPage"]
 
 		if not type(self.config["blog"]["archiveTitle"]) == dict:
-			indexTitleLang = {}
+			archiveTitleLang = {}
 			for language in self.__languages:
-				indexTitleLang[language] = self.config["blog"]["archiveTitle"]
-			self.config["blog"]["archiveTitle"] = indexTitleLang
+				archiveTitleLang[language] = self.config["blog"]["archiveTitle"]
+			self.config["blog"]["archiveTitle"] = archiveTitleLang
 
 		for language in self.__languages:
 
 			archiveTitle = self.config["blog"]["archiveTitle"][language] if "archiveTitle" in self.config["blog"] else "Index %d"
-			sortedPosts = sorted([post for post in self.__posts if post["lang"] == language], key=self.__postSorter)
+			sortedPosts = self.__getSortedPosts(language)
 
 			pos = 0
 			page = 1
-			while pos < len(sortedPosts):
-				self.__renderer.render(archiveTitle, {
-					"current" : {
-						"pageno" : page,
-						"lang" : language
-					}
-				})
-				indexPage = self.__createPage("index-%d" % page, archiveTitle, "")
-				indexPages.append(indexPage)
 
-				indexPage["post"] = sortedPosts[pos:archiveItemsPerPage+pos]
-				indexPage["pageno"] = page
+			while pos < len(sortedPosts):
+				renderModel = {
+					"pageno" : page,
+					"lang" : language
+				}
+
+				archiveTitle = Util.replaceFields(archiveTitle, renderModel)
+
+				archivePage = self.__createPage("archive-%d" % page, archiveTitle, "")
+				archivePages.append(archivePage)
+
+				archivePage["post"] = sortedPosts[pos:archiveItemsPerPage+pos]
+				archivePage["pageno"] = page
 
 				pos += archiveItemsPerPage
 				page += 1
 
-		return indexPages
+		return archivePages
 
+
+	def __getSortedPosts(self, language):
+		return sorted([post for post in self.__posts if post["lang"] == language], key=self.__postSorter)
 
 
 	def __outputContent(self):
@@ -282,7 +287,7 @@ class Konstrukteur:
 				items = self.__posts
 			elif contentType == "archive":
 				urlTemplate = self.__archiveUrl
-				items = self.__generatePostIndex()
+				items = self.__generateArchive()
 			elif contentType == "page":
 				urlTemplate = self.__pageUrl
 				items = self.__pages
@@ -345,7 +350,7 @@ class Konstrukteur:
 			Console.indent()
 
 			for language in self.__languages:
-				sortedPosts = sorted([post for post in self.__posts if post["lang"] == language], key=self.__postSorter)
+				sortedPosts = self.__getSortedPosts(language)
 
 				renderModel = {
 					'config' : self.config,
