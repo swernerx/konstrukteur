@@ -27,6 +27,7 @@ from jasy.env.State import session
 import jasy.core.Console as Console
 import jasy.core.FileManager as FileManager
 import jasy.core.Cache as Cache
+import jasy.core.Util as JasyUtil
 import jasy.template.Parser as TemplateParser
 
 from watchdog.observers import Observer
@@ -253,74 +254,10 @@ class Konstrukteur:
 		Console.outdent()
 
 
-	def __mapLanguages(self, languages, currentItem):
-		""" Annotate languges list with information about current language """
-
-		def languageMap(value):
-			currentLanguage = value == currentItem["lang"]
-			currentName = self.__locale[value].getName(value)
-
-			if "translations" not in currentItem:
-				return None
-
-			if currentLanguage:
-				translatedName = currentName
-				relativeUrl = "."
-			else:
-				translatedName = self.__locale[currentItem["lang"]].getName(value)
-				relativeUrl = currentItem["translations"][value]
-
-			return {
-				"code" : value,
-				"current" : currentLanguage,
-				"name" : currentName,
-				"translatedName" : translatedName,
-				"relativeUrl" : relativeUrl,
-				"page" : currentItem
-			}
-
-
-		return list(map(languageMap, languages))
 
 
 
-	def __refreshUrls(self, pages, currentItem, pageUrlTemplate):
-		""" Refresh urls of every page relative to current active page """
-		siteUrl = self.siteurl
 
-		for pageItem in pages:
-			url = pageItem["url"] if "url" in pageItem else self.__renderer.render(pageUrlTemplate, { "current" : pageItem })
-			pageItem["absoluteUrl"] = os.path.join(siteUrl, url)
-			pageItem["rootUrl"] = url
-			pageItem["baseUrl"] = os.path.relpath("/", os.path.dirname("/%s" % url))
-
-		for pageItem in pages:
-			if pageItem == currentItem:
-				pageItem["active"] = True
-				pageItem["relativeUrl"] = ""
-			else:
-				pageItem["active"] = False
-				pageItem["relativeUrl"] = os.path.relpath(pageItem["rootUrl"], os.path.dirname(currentItem["rootUrl"]))
-
-		for pageItem in pages:
-			if pageItem["slug"] == currentItem["slug"]:
-				if not pageItem["lang"] == currentItem["lang"]:
-					if not "translations" in currentItem:
-						currentItem["translations"] = {}
-
-					currentItem["translations"][pageItem["lang"]] = pageItem["relativeUrl"]
-
-
-
-	def __filterAndSortPages(self, pages, currentItem):
-		""" Return sorted list of only pages of same language and not hidden """
-		pageList = []
-
-		for pageItem in pages:
-			if pageItem["lang"] == currentItem["lang"] and not pageItem["status"] == "hidden":
-				pageList.append(pageItem)
-
-		return sorted(pageList, key=lambda page: page["pos"])
 
 
 
@@ -414,7 +351,7 @@ class Konstrukteur:
 
 				Console.info("Generating %s %s/%s: %s...", contentType, pos+1, length, itemSlug)
 
-				renderModel = self.__generateRenderModel(self.__pages, currentItem, contentType)
+				renderModel = self.__generateRenderModel(currentItem, contentType)
 				filePath = replaceFields(urlTemplate, currentItem)
 				Console.info("File Path: " + urlTemplate + "=>" + filePath)
 				outputFilename = os.path.join(destinationPath, filePath)
@@ -474,20 +411,58 @@ class Konstrukteur:
 			Console.outdent()
 
 
+
+
 	def __postSorter(self, item):
 		return item["date"]
 
 
-	def __generateRenderModel(self, pages, currentItem, pageType):
-		res = {}
 
-		res["type"] = pageType
-		res["current"] = currentItem
-		res["pages"] = self.__filterAndSortPages(pages, currentItem)
-		res["config"] = dict(itertools.chain(self.config.items(), {
-			"sitename" : self.sitename,
-			"siteurl" : self.siteurl
-		}.items()))
-		res["languages"] = self.__mapLanguages(self.__languages, currentItem)
 
-		return res
+
+
+
+
+	def __getItemLanguages(self, item):
+		""" Annotate languges list with information about current language """
+
+		if "translations" not in item:
+			return None
+
+		languages = self.__languages
+
+		def languageMap(value):
+			isCurrent = value == item["lang"]
+			localizedName = self.__locale[value].getName(value)
+			relativeUrl = "." if isCurrent else item["translations"][value]
+
+			return {
+				"code" : value,
+				"name" : localizedName,
+				"isCurrent" : isCurrent,
+				"relativeUrl" : relativeUrl
+			}
+
+		return list(map(languageMap, languages))
+
+
+	def __getFilteredPages(self, currentItem):
+		""" Return sorted list of only pages of same language and not hidden """
+
+		pages = self.__pages
+		currentLang = currentItem["lang"]
+		pageList = [ pageItem for pageItem in pages if pageItem["lang"] == currentLang and not pageItem["status"] == "hidden" ]
+
+		return sorted(pageList, key=lambda pageItem: JasyUtil.getKey(pageItem, "pos", 1000000))
+
+
+	def __generateRenderModel(self, currentItem, contentType):
+		renderModel = {}
+
+		renderModel["type"] = contentType
+		renderModel["current"] = currentItem
+		renderModel["pages"] = self.__getFilteredPages(currentItem)
+		renderModel["config"] = self.config
+		renderModel["languages"] = self.__getItemLanguages(currentItem)
+
+		return renderModel
