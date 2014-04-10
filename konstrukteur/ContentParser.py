@@ -67,6 +67,7 @@ class ContentParser:
 		if not "status" in parsed:
 			parsed["status"] = "published"
 
+		# Expect default language when not defined otherwise
 		if not "lang" in parsed:
 			parsed["lang"] = self.__defaultLanguage
 
@@ -77,10 +78,11 @@ class ContentParser:
 		# Create simple boolean flag for publish state check
 		parsed["publish"] = parsed["status"] == "published"
 
-		# Parse date if available
+		# Parse date to a date instance and pre-formatted date strings
 		if "date" in parsed:
 			parsed["date"] = dateutil.parser.parse(parsed["date"]).replace(tzinfo=dateutil.tz.tzlocal())
-			parsed["shortdate"] = parsed["date"].strftime("%y-%m-%d")
+			parsed["date-daily"] = parsed["date"].strftime("%y-%m-%d")
+			parsed["date-monthly"] = parsed["date"].strftime("%y-%m")
 
 		# Automatically register new languages
 		self.__languages.add(parsed["lang"])
