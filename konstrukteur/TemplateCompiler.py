@@ -80,7 +80,9 @@ def walk(node, labels, nostrip, indent):
                     code += prefix + 'if not self._has(' + accessorCode + '):\n' + innerCode + '\n'
                 elif tag == "#":
                     innerCounter += 1
-                    code += prefix + ('def inner%s(self, data, partials, labels):\n' % innerCounter) + innerCode + '\n'
+                    # Let 'buf' be nonlocal for sharing parent scope's variable
+                    nonlocalCode = ((indent+1) * indentString) + "nonlocal buf\n"
+                    code += prefix + ('def inner%s(self, data, partials, labels):\n' % innerCounter) + nonlocalCode + innerCode + '\n'
                     code += prefix + 'self._section(' + accessorCode + ', partials, labels, inner%s)\n' % innerCounter
                 elif tag == "=":
                     code += prefix + 'buf += self._data(' + accessorCode + ')\n'
