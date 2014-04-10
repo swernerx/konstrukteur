@@ -99,7 +99,7 @@ class Template:
         if value is None:
             return ""
 
-        return htmlChars.sub(str(value), htmlEscape)
+        return htmlChars.sub(htmlEscape, str(value))
 
 
     def _data(self, key, method, data, escape):
