@@ -40,7 +40,6 @@ import konstrukteur.FileWatcher
 import konstrukteur.ContentParser
 import konstrukteur.Util
 
-
 import konstrukteur.TemplateCompiler as TemplateCompiler
 import konstrukteur.Template as Template
 
@@ -78,6 +77,9 @@ class CustomJsonEncoder(json.JSONEncoder):
 		if callable(obj):
 			return "<callable>"
 
+		elif isinstance(obj, datetime.date):
+			return obj.isoformat()
+
 		return json.JSONEncoder.default(self, obj)
 
 def stringifyData(data):
@@ -90,30 +92,29 @@ COMMAND_REGEX = re.compile(r"{{@(?P<cmd>\S+?)(?:\s+?(?P<params>.+?))}}")
 class Konstrukteur:
 	""" Core application class for Konstrukteur """
 
-	sitename = None
-	siteurl = None
-	posturl = None
-	pageurl = None
-	feedurl = None
-	extensions = None
-	theme = None
-	defaultLanguage = None
-	config = None
+	config = None # Dict
 
-	__regenerate = False
-	__templates = None
-	__pages = None
-	__languages = None
+	__siteName = None
+	__siteUrl = None
 
-	__postUrl = None
-	__pageUrl = None
-	__feedUrl = None
-	__archiveUrl = None
+	__theme = None
+
+	__defaultLanguage = None # String
+	__extensions = None # List
+
+	__regenerate = False # Boolean
+	__templates = None # List
+	__pages = None # List
+	__languages = None # Set
+	__locales = None # Dict
+
+	__postUrl = None # Template String
+	__pageUrl = None # Template String
+	__feedUrl = None # Template String
+	__archiveUrl = None # Template String
 
 	__renderer = None
-	__safeRenderer = None
 	__fileManager = None
-	__locale = None
 
 
 	def __init__(self, profile, regenerate=False, project=None):
@@ -123,7 +124,7 @@ class Konstrukteur:
 
 		self.__profile = profile
 		self.__session = session
-		self.__locale = {}
+		self.__locales = {}
 		self.__commandReplacer = []
 		self.__id = 0
 		self.__regenerate = not regenerate == False
@@ -131,17 +132,19 @@ class Konstrukteur:
 
 		# Importing configuration from project
 		self.config = main.getConfigValue("konstrukteur")
-		self.sitename = main.getConfigValue("konstrukteur.site.name", "Test website")
-		self.siteurl = main.getConfigValue("konstrukteur.site.url", "//localhost")
+
+		self.__siteName = main.getConfigValue("konstrukteur.site.name", "Test website")
+		self.__siteUrl = main.getConfigValue("konstrukteur.site.url", "//localhost")
 
 		self.__pageUrl = main.getConfigValue("konstrukteur.pageUrl", "{{language}}/{{slug}}.html")
+
 		self.__postUrl = main.getConfigValue("konstrukteur.blog.postUrl", "{{language}}/blog/{{slug}}.html")
 		self.__archiveUrl = main.getConfigValue("konstrukteur.blog.archiveUrl", "archive.{{language}}-{{page}}.html")
 		self.__feedUrl = main.getConfigValue("konstrukteur.blog.feedUrl", "feed.{{language}}.xml")
 
-		self.extensions = main.getConfigValue("konstrukteur.extensions", ["markdown", "html"])
-		self.theme = main.getConfigValue("konstrukteur.theme", main.getName())
-		self.defaultLanguage = main.getConfigValue("konstrukteur.defaultLanguage", "en")
+		self.__extensions = main.getConfigValue("konstrukteur.extensions", ["markdown", "html"])
+		self.__theme = main.getConfigValue("konstrukteur.theme", main.getName())
+		self.__defaultLanguage = main.getConfigValue("konstrukteur.defaultLanguage", "en")
 		self.__fileManager = FileManager.FileManager(self.__profile)
 
 
@@ -166,10 +169,10 @@ class Konstrukteur:
 			raise RuntimeError("Path to content not found : %s" % self.__contentPath)
 
 		# A theme could be any project registered in the current session
-		if self.theme:
-			themeProject = session.getProjectByName(self.theme)
+		if self.__theme:
+			themeProject = session.getProjectByName(self.__theme)
 			if not themeProject:
-				raise RuntimeError("Theme '%s' not found" % self.theme)
+				raise RuntimeError("Theme '%s' not found" % self.__theme)
 
 		self.__initializeTemplates()
 		self.__generateOutput()
@@ -239,7 +242,7 @@ class Konstrukteur:
 	def __parseContent(self):
 		""" Parse all content items in users content directory """
 
-		contentParser = konstrukteur.ContentParser.ContentParser(self.extensions, self.defaultLanguage)
+		contentParser = konstrukteur.ContentParser.ContentParser(self.__extensions, self.__defaultLanguage)
 
 		Console.info("Parsing content...")
 		Console.indent()
@@ -253,8 +256,7 @@ class Konstrukteur:
 		Console.indent()
 
 		for language in self.__languages:
-			if not language in self.__locale:
-				self.__locale[language] = konstrukteur.Language.LocaleParser(language)
+			self.__locales[language] = konstrukteur.Language.LocaleParser(language)
 
 		Console.outdent()
 
@@ -267,7 +269,7 @@ class Konstrukteur:
 
 
 	def __createPage(self, slug, title, content):
-		contentParser = konstrukteur.ContentParser.ContentParser(self.extensions, self.defaultLanguage)
+		contentParser = konstrukteur.ContentParser.ContentParser(self.__extensions, self.__defaultLanguage)
 		return contentParser.generateFields({
 			"slug": slug,
 			"title": title,
@@ -333,7 +335,7 @@ class Konstrukteur:
 
 			# Preparing template
 			templateName = "%(theme)s.%(type)s" % {
-				"theme": self.theme,
+				"theme": self.__theme,
 				"type": contentType[0].upper() + contentType[1:]
 			}
 
@@ -396,20 +398,18 @@ class Konstrukteur:
 				renderModel = {
 					'config' : self.config,
 					'site' : {
-						'name' : self.sitename,
-						'url' : self.siteurl
+						'name' : self.__siteName,
+						'url' : self.__siteUrl
 					},
 					"current" : {
 						"lang" : language
 					},
+					"feedUrl" : feedUrl,
 					"now" : datetime.datetime.now(tz=dateutil.tz.tzlocal()).replace(microsecond=0).isoformat(),
 					"post" : sortedPosts[:self.config["blog"]["itemsInFeed"]]
 				}
 
-				feedUrl = self.__renderer.render(self.__feedUrl, renderModel)
-				renderModel["feedurl"] = feedUrl
-
-				outputContent = self.__safeRenderer.render(self.__templates["%s.Feed" % self.theme], renderModel)
+				outputContent = self.__safeRenderer.render(self.__templates["%s.Feed" % self.__theme], renderModel)
 				outputFilename = self.__profile.expandFileName(os.path.join(self.__profile.getDestinationPath(), feedUrl))
 				self.__fileManager.writeFile(outputFilename, outputContent)
 
@@ -438,7 +438,7 @@ class Konstrukteur:
 
 		def languageMap(value):
 			isCurrent = value == item["lang"]
-			localizedName = self.__locale[value].getName(value)
+			localizedName = self.__locales[value].getName(value)
 			relativeUrl = "." if isCurrent else item["translations"][value]
 
 			return {

@@ -79,9 +79,8 @@ class ContentParser:
 
 		# Parse date if available
 		if "date" in parsed:
-			parsed["date"] = dateutil.parser.parse(parsed["date"]).replace(tzinfo=dateutil.tz.tzlocal()).isoformat()
-			print("DATE: ", parsed["date"])
-			parsed["shortdate"] = "-shortdate-"
+			parsed["date"] = dateutil.parser.parse(parsed["date"]).replace(tzinfo=dateutil.tz.tzlocal())
+			parsed["shortdate"] = parsed["date"].strftime("%y-%m-%d")
 
 		# Automatically register new languages
 		self.__languages.add(parsed["lang"])
