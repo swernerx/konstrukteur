@@ -37,57 +37,11 @@ import konstrukteur.HtmlParser
 import konstrukteur.HtmlBeautifier
 import konstrukteur.Language
 import konstrukteur.FileWatcher
-import konstrukteur.ContentParser
-import konstrukteur.Util
-
+import konstrukteur.ContentParser as ContentParser
+import konstrukteur.Util as Util
 import konstrukteur.TemplateCompiler as TemplateCompiler
 import konstrukteur.Template as Template
 
-
-FIELDS_REGEX = re.compile(r"{{([a-zA-Z][a-zA-Z0-9\-\.]+)}}")
-
-
-
-def replaceFields(input, data):
-	def replacer(match):
-		key = match.group(1)
-		if key in data:
-			return data[key]
-		elif "." in key:
-			current = data
-			splits = key.split(".")
-			for split in splits:
-				if split in current:
-					current = current[split]
-				else:
-					current = None
-					break
-
-			if current is not None:
-				return current
-
-		Console.warn("No value for key: %s" % key)
-		return match.group(0)
-
-	return FIELDS_REGEX.sub(replacer, input)
-
-
-class CustomJsonEncoder(json.JSONEncoder):
-	def default(self, obj):
-		if callable(obj):
-			return "<callable>"
-
-		elif isinstance(obj, datetime.date):
-			return obj.isoformat()
-
-		return json.JSONEncoder.default(self, obj)
-
-def stringifyData(data):
-	return json.dumps(data, sort_keys=True, indent=2, separators=(',', ': '), cls=CustomJsonEncoder)
-
-
-
-COMMAND_REGEX = re.compile(r"{{@(?P<cmd>\S+?)(?:\s+?(?P<params>.+?))}}")
 
 class Konstrukteur:
 	""" Core application class for Konstrukteur """
@@ -242,7 +196,7 @@ class Konstrukteur:
 	def __parseContent(self):
 		""" Parse all content items in users content directory """
 
-		contentParser = konstrukteur.ContentParser.ContentParser(self.__extensions, self.__defaultLanguage)
+		contentParser = ContentParser.ContentParser(self.__extensions, self.__defaultLanguage)
 
 		Console.info("Parsing content...")
 		Console.indent()
@@ -269,7 +223,7 @@ class Konstrukteur:
 
 
 	def __createPage(self, slug, title, content):
-		contentParser = konstrukteur.ContentParser.ContentParser(self.__extensions, self.__defaultLanguage)
+		contentParser = ContentParser.ContentParser(self.__extensions, self.__defaultLanguage)
 		return contentParser.generateFields({
 			"slug": slug,
 			"title": title,
@@ -354,12 +308,12 @@ class Konstrukteur:
 				itemSlug = currentItem["slug"]
 				itemMtime = currentItem["mtime"]
 
-				print("DATA: ", stringifyData(currentItem))
+				print("DATA: ", Util.stringifyData(currentItem))
 
 				Console.info("Generating %s %s/%s: %s...", contentType, pos+1, length, itemSlug)
 
 				renderModel = self.__generateRenderModel(currentItem, contentType)
-				filePath = replaceFields(urlTemplate, currentItem)
+				filePath = Util.replaceFields(urlTemplate, currentItem)
 
 				Console.info("File Path: " + urlTemplate + "=>" + filePath)
 				outputFilename = os.path.join(destinationPath, filePath)
