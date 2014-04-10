@@ -69,42 +69,42 @@ def walk(node, labels, nostrip, indent):
                 else:
                     accessor = 0
 
-                accessorCode = '"' + escaped + '",' + str(accessor) + ',data'
+                accessorCode = '"' + escaped + '","' + str(accessor) + '",data'
 
                 if tag in innerTags:
                     innerCode = walk(current["nodes"], labels, nostrip, indent+1)
 
                 if tag == "?":
-                    code += prefix + 'if self.__has(' + accessorCode + '):\n' + innerCode + '\n'
+                    code += prefix + 'if self._has(' + accessorCode + '):\n' + innerCode + '\n'
                 elif tag == "^":
-                    code += prefix + 'if not self.__has(' + accessorCode + '):\n' + innerCode + '\n'
+                    code += prefix + 'if not self._has(' + accessorCode + '):\n' + innerCode + '\n'
                 elif tag == "#":
                     innerCounter += 1
                     code += prefix + ('def inner%s(self, data, partials, labels):\n' % innerCounter) + innerCode + '\n'
-                    code += prefix + 'self.__section(' + accessorCode + ', partials, labels, inner%s)\n' % innerCounter
+                    code += prefix + 'self._section(' + accessorCode + ', partials, labels, inner%s)\n' % innerCounter
                 elif tag == "=":
-                    code += prefix + 'buf += self.__data(' + accessorCode + ')\n'
+                    code += prefix + 'buf += self._data(' + accessorCode + ')\n'
                 elif tag == "$":
-                    code += prefix + 'buf += self.__variable(' + accessorCode + ')\n';
+                    code += prefix + 'buf += self._variable(' + accessorCode + ')\n';
 
             elif tag == ">":
-                code += prefix + 'buf += self.__partial("' + escaped + '",data, partials, labels)\n'
+                code += prefix + 'buf += self._partial("' + escaped + '",data, partials, labels)\n'
             elif tag == "_":
                 if labels and escaped in labels:
                     code += walk(Parser.parse(labels[escaped], True), labels, indent+1);
                 else:
-                    code += prefix + 'buf += self.__label("' + escaped + '", data, partials, labels)\n'
+                    code += prefix + 'buf += self._label("' + escaped + '", data, partials, labels)\n'
 
     return code
 
 
-def compile(text, labels=[], nostrip=False, name=None):
+def compile(text, labels=None, nostrip=False, name=None):
     # Parse text into a tree
     tree = Parser.parse(text, nostrip)
 
     # Generate code for render function
     wrapped = indentString + 'buf = ""\n' + walk(tree, labels, nostrip, 1) + "\n" + indentString + 'return buf'
-    code = "def render(self, data, partials, labels):\n%s" % wrapped
+    code = "def render(self, data, partials=None, labels=None):\n%s" % wrapped
 
     # Execute in an sandboxes environment
     export = {}

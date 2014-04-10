@@ -72,20 +72,21 @@ class Template:
         self.__name = name;
 
 
-    def render(self, data, partials, labels):
+    def render(self, data, partials=None, labels=None):
         """
         {String} Public render method which transforms the stored template text using the @data {Map},
         runtime specific @partials {Map?null} and @labels {Map?null}.
         """
 
         try:
-            return self.__render(data, partials, labels);
+            # Need to inject self again as the method applied to 'self' is not bound to the instance in the classical way
+            return self.__render(self, data, partials, labels);
         except ex:
             Console.error("Unable to render template " + (self.__name or ""));
             raise ex;
 
 
-    def __variable(self, key, method, data):
+    def _variable(self, key, method, data):
         """
         {String} Outputs the @key {String} of @data {Map}
         using the given accessor @method {Integer} as HTML escaped variable.
