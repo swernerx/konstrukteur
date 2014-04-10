@@ -13,14 +13,14 @@
 import re
 
 def camelize(string):
-    return re.sub(r"(?:^|_)(.)", lambda x: x.group(0)[-1].upper(), string)
+    return re.sub(r"\-+(\S)?", lambda x: x.group(0).upper(), string)
 
 def htmlEscape(str):
     return htmlMap[str]
 
 def getter(key, obj):
     if type(obj) is dict:
-        camelized = camelize(key);
+        camelized = camelize(key)
         if camelized in obj:
             return obj[camelized]
 
@@ -29,9 +29,9 @@ def plain(key, data):
         return data
 
 def structure(key, data):
-    splits = key.split(".");
+    splits = key.split(".")
     for split in splits:
-        data = getter(split, data);
+        data = getter(split, data)
         if data is None:
             return None
 
