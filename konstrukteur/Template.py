@@ -19,7 +19,7 @@ def htmlEscape(str):
     return htmlMap[str]
 
 def getter(key, obj):
-    if type(obj) is dict:
+    if isinstance(obj, dict):
         camelized = camelize(key)
         if camelized in obj:
             return obj[camelized]
