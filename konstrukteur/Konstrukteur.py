@@ -241,8 +241,9 @@ class Konstrukteur:
 
 		Console.info("Parsing content...")
 		Console.indent()
-		self.__pages = contentParser.parse(os.path.join(self.__contentPath, "page"), self.__languages)
-		self.__posts = contentParser.parse(os.path.join(self.__contentPath, "post"), self.__languages)
+		self.__pages = contentParser.parse(os.path.join(self.__contentPath, "page"))
+		self.__posts = contentParser.parse(os.path.join(self.__contentPath, "post"))
+		self.__languages = contentParser.getLanguages()
 		Console.outdent()
 
 		Console.info("Processing locales...")
@@ -353,6 +354,7 @@ class Konstrukteur:
 
 				renderModel = self.__generateRenderModel(currentItem, contentType)
 				filePath = replaceFields(urlTemplate, currentItem)
+
 				Console.info("File Path: " + urlTemplate + "=>" + filePath)
 				outputFilename = os.path.join(destinationPath, filePath)
 
@@ -399,7 +401,6 @@ class Konstrukteur:
 					"now" : datetime.datetime.now(tz=dateutil.tz.tzlocal()).replace(microsecond=0).isoformat(),
 					"post" : sortedPosts[:self.config["blog"]["itemsInFeed"]]
 				}
-
 
 				feedUrl = self.__renderer.render(self.__feedUrl, renderModel)
 				renderModel["feedurl"] = feedUrl

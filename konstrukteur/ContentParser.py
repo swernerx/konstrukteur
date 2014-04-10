@@ -16,7 +16,7 @@ import konstrukteur.MarkdownParser
 class ContentParser:
 	""" Content parser class for Konstrukteur """
 
-	def __init__(self, extensions, defaultLanguage):
+	def __init__(self, extensions, defaultLanguage="en"):
 		self.__extensions = extensions
 		self.__extensionParser = {
 			"html" : konstrukteur.HtmlParser,
@@ -26,12 +26,15 @@ class ContentParser:
 		}
 
 		self.__id = 1
-		self.__commandReplacer = []
-		self.__languages = {}
+		self.__languages = set()
 		self.__defaultLanguage = defaultLanguage
 
 
-	def parse(self, path, languages):
+	def getLanguages(self):
+		return self.__languages
+
+
+	def parse(self, path):
 		Console.info("Processing %s..." % path)
 		Console.indent()
 
@@ -41,12 +44,12 @@ class ContentParser:
 				basename = os.path.basename(filename)
 				Console.debug("Parsing %s" % basename)
 
-				parsed = self.__parseWithSpecificParser(filename, extension)
+				parsed = self.__delegatedParse(filename, extension)
 				if not parsed:
 					Console.error("Error parsing file %s" % filename)
 					continue
 
-				self.__postProcess(parsed, filename, languages)
+				self.__postProcess(parsed, filename)
 				collection.append(parsed)
 
 		Console.info("Registered %s files.", len(collection))
@@ -55,7 +58,7 @@ class ContentParser:
 		return collection
 
 
-	def __postProcess(self, parsed, filename, languages):
+	def __postProcess(self, parsed, filename):
 		if "slug" in parsed:
 			parsed["slug"] = Util.fixSlug(parsed["slug"])
 		else:
@@ -77,15 +80,16 @@ class ContentParser:
 		# Parse date if available
 		if "date" in parsed:
 			parsed["date"] = dateutil.parser.parse(parsed["date"]).replace(tzinfo=dateutil.tz.tzlocal()).isoformat()
+			print("DATE: ", parsed["date"])
+			parsed["shortdate"] = "-shortdate-"
 
 		# Automatically register new languages
-		if parsed["lang"] not in languages:
-			languages.append(parsed["lang"])
+		self.__languages.add(parsed["lang"])
 
 		return parsed
 
 
-	def __parseWithSpecificParser(self, filename, extension):
+	def __delegatedParse(self, filename, extension):
 		""" Parse single content file """
 
 		if not extension in self.__extensionParser:
