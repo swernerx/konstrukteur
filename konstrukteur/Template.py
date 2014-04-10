@@ -12,12 +12,15 @@
 
 import re
 
+def camelize(string):
+    return re.sub(r"(?:^|_)(.)", lambda x: x.group(0)[-1].upper(), string)
+
 def htmlEscape(str):
     return htmlMap[str]
 
 def getter(key, obj):
     if type(obj) is dict:
-        camelized = core.String.camelize(key);
+        camelized = camelize(key);
         if camelized in obj:
             return obj[camelized]
 
@@ -99,7 +102,7 @@ class Template:
         return htmlChars.sub(str(value), htmlEscape)
 
 
-    def __data(self, key, method, data, escape):
+    def _data(self, key, method, data, escape):
         """
         {String} Outputs the @key {String} of @data {Map}
         using the given accessor @method {Integer} as raw data.
@@ -112,7 +115,7 @@ class Template:
         return str(value)
 
 
-    def __partial(self, name, data, partials, labels):
+    def _partial(self, name, data, partials, labels):
         """
         {String} Tries to find a partial in the current scope and render it
         """
@@ -124,7 +127,7 @@ class Template:
         return "";
 
 
-    def __label(self, name, data, partials, labels):
+    def _label(self, name, data, partials, labels):
         """
         {String} Tries to find a dynamic label by its @name {String} and renders
         the resulting label text like a partial template with the current
@@ -142,7 +145,7 @@ class Template:
         return compiledLabel.__render(data, partials, labels)
 
 
-    def __section(self, key, method, data, partials, labels, section):
+    def _section(self, key, method, data, partials, labels, section):
         """
         Renders a section using the given @data {var}, user
         defined @partials {Map} and @labels {Map} and a @section {Function} specific renderer.
@@ -157,7 +160,7 @@ class Template:
                 section(self, value, partials, labels)
 
 
-    def __has(self, key, method, data):
+    def _has(self, key, method, data):
         """
         {Boolean} Whether the given @key {String} has valid content inside @data {Map}
         using the given accessor @method {Integer}.
