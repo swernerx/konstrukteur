@@ -237,21 +237,23 @@ class Konstrukteur:
 		""" Parse all content items in users content directory """
 
 		contentParser = konstrukteur.ContentParser.ContentParser(self.extensions, self.defaultLanguage)
-		self.__languages = []
 
 		Console.info("Parsing content...")
 		Console.indent()
+
 		self.__pages = contentParser.parse(os.path.join(self.__contentPath, "page"))
 		self.__posts = contentParser.parse(os.path.join(self.__contentPath, "post"))
 		self.__languages = contentParser.getLanguages()
-		Console.outdent()
 
+		Console.outdent()
 		Console.info("Processing locales...")
 		Console.indent()
+
 		for language in self.__languages:
 			Console.info("Adding language: %s", language)
 			if not language in self.__locale:
 				self.__locale[language] = konstrukteur.Language.LocaleParser(language)
+
 		Console.outdent()
 
 
