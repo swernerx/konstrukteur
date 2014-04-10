@@ -10,6 +10,9 @@ import json
 import datetime
 
 
+import jasy.core.Console as Console
+
+
 def fixSlug(slug):
 	""" Replaces unicode character with something equal from ascii ( e.g. ü -> u ) """
 
@@ -23,7 +26,7 @@ def replaceFields(input, data):
 	def replacer(match):
 		key = match.group(1)
 		if key in data:
-			return data[key]
+			return str(data[key])
 		elif "." in key:
 			current = data
 			splits = key.split(".")
@@ -35,7 +38,7 @@ def replaceFields(input, data):
 					break
 
 			if current is not None:
-				return current
+				return str(current)
 
 		Console.warn("No value for key: %s" % key)
 		return match.group(0)
