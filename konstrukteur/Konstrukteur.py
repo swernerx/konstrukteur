@@ -44,7 +44,7 @@ import konstrukteur.TemplateCompiler as TemplateCompiler
 import konstrukteur.Template as Template
 
 
-FIELDS_REGEX = re.compile(r"{{([a-zA-Z][a-zA-Z0-9\.]+)}}")
+FIELDS_REGEX = re.compile(r"{{([a-zA-Z][a-zA-Z0-9\-\.]+)}}")
 
 
 
