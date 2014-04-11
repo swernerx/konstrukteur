@@ -243,21 +243,21 @@ class Konstrukteur:
             pageno = 1
 
             while pos < len(sortedPosts):
-                renderModel = {
+                archiveTitle = Util.replaceFields(archiveTitle, {
                     "pageno" : pageno,
                     "lang" : language
-                }
-
-                archiveTitle = Util.replaceFields(archiveTitle, renderModel)
+                })
 
                 archivePage = {
                     "slug" : "archive-%d" % pageno,
                     "title" : archiveTitle,
-                    "posts" :  sortedPosts[pos:itemsPerPage + pos],
+                    "posts" : sortedPosts[pos:itemsPerPage + pos],
                     "pageno" : pageno,
                     "mtime" : None,  # Fully generated content
                     "lang" : language
                 }
+
+                #print(Util.stringifyData(archivePage))
 
                 pages.append(archivePage)
                 pageno += 1
@@ -343,35 +343,45 @@ class Konstrukteur:
 
         Console.outdent()
 
-        if self.__posts:
-            Console.info("Generating feed...")
-            Console.indent()
-
-            for language in self.__languages:
-                sortedPosts = self.__getSortedPosts(language)
-
-                renderModel = {
-                    'config' : self.config,
-                    'site' : {
-                        'name' : self.__siteName,
-                        'url' : self.__siteUrl
-                    },
-                    "current" : {
-                        "lang" : language
-                    },
-                    "feedUrl" : self.__feedUrl,
-                    "now" : datetime.datetime.now(tz=dateutil.tz.tzlocal()).replace(microsecond=0).isoformat(),
-                    "post" : sortedPosts[:self.config["blog"]["itemsInFeed"]]
-                }
-
-                template = self.__templates["%s.Feed" % self.__theme]
-                outputContent = template.render(renderModel)
-                outputFilename = os.path.join(destinationPath, self.__feedUrl)
-                self.__fileManager.writeFile(outputFilename, outputContent)
-
-            Console.outdent()
+        self.__generateFeed()
 
 
+
+
+    def __generateFeed(self):
+        if not self.__posts:
+            return
+
+        Console.info("Generating feed...")
+        Console.indent()
+
+        itemsInFeed = self.config["blog"]["itemsInFeed"]
+        destinationPath = self.__profile.getDestinationPath()
+
+        for language in self.__languages:
+            sortedPosts = self.__getSortedPosts(language)
+
+            # Feed Render Model
+            renderModel = {
+                'config' : self.config,
+                'site' : {
+                    'name' : self.__siteName,
+                    'url' : self.__siteUrl
+                },
+                "current" : {
+                    "lang" : language
+                },
+                "feedUrl" : self.__feedUrl,
+                "now" : datetime.datetime.now(tz=dateutil.tz.tzlocal()).replace(microsecond=0).isoformat(),
+                "posts" : sortedPosts[0:itemsInFeed]
+            }
+
+            template = self.__templates["%s.Feed" % self.__theme]
+            outputContent = template.render(renderModel)
+            outputFilename = os.path.join(destinationPath, self.__feedUrl)
+            self.__fileManager.writeFile(outputFilename, outputContent)
+
+        Console.outdent()
 
 
     def __postSorter(self, item):
