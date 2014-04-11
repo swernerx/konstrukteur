@@ -14,8 +14,8 @@ import bs4
 orig_prettify = bs4.BeautifulSoup.prettify
 r = re.compile(r'^(\s*)', re.MULTILINE)
 def prettify(self, encoding=None, formatter="minimal", indent_width=2):
-	return r.sub(r'\1' * indent_width, orig_prettify(self, encoding, formatter))
+    return r.sub(r'\1' * indent_width, orig_prettify(self, encoding, formatter))
 bs4.BeautifulSoup.prettify = prettify
 
 def beautify(html):
-	return bs4.BeautifulSoup(html).prettify(indent_width=2)
+    return bs4.BeautifulSoup(html).prettify(indent_width=2)

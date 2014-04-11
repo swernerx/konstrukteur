@@ -44,175 +44,175 @@ import konstrukteur.Template as Template
 
 
 class Konstrukteur:
-	""" Core application class for Konstrukteur """
+    """ Core application class for Konstrukteur """
 
-	config = None # Dict
+    config = None # Dict
 
-	__siteName = None
-	__siteUrl = None
+    __siteName = None
+    __siteUrl = None
 
-	__theme = None
+    __theme = None
 
-	__defaultLanguage = None # String
-	__extensions = None # List
+    __defaultLanguage = None # String
+    __extensions = None # List
 
-	__regenerate = False # Boolean
-	__templates = None # List
-	__pages = None # List
-	__languages = None # Set
-	__locales = None # Dict
+    __regenerate = False # Boolean
+    __templates = None # List
+    __pages = None # List
+    __languages = None # Set
+    __locales = None # Dict
 
-	__postUrl = None # Template String
-	__pageUrl = None # Template String
-	__feedUrl = None # Template String
-	__archiveUrl = None # Template String
+    __postUrl = None # Template String
+    __pageUrl = None # Template String
+    __feedUrl = None # Template String
+    __archiveUrl = None # Template String
 
-	__renderer = None
-	__fileManager = None
+    __renderer = None
+    __fileManager = None
 
 
-	def __init__(self, profile, regenerate=False, project=None):
-		# Figuring out main project
-		session = profile.getSession()
-		main = project or session.getMain()
+    def __init__(self, profile, regenerate=False, project=None):
+        # Figuring out main project
+        session = profile.getSession()
+        main = project or session.getMain()
 
-		self.__profile = profile
-		self.__session = session
-		self.__locales = {}
-		self.__commandReplacer = []
-		self.__id = 0
-		self.__regenerate = not regenerate == False
-		self.__cache = main.getCache()
+        self.__profile = profile
+        self.__session = session
+        self.__locales = {}
+        self.__commandReplacer = []
+        self.__id = 0
+        self.__regenerate = not regenerate == False
+        self.__cache = main.getCache()
 
-		# Importing configuration from project
-		self.config = main.getConfigValue("konstrukteur")
+        # Importing configuration from project
+        self.config = main.getConfigValue("konstrukteur")
 
-		self.__siteName = main.getConfigValue("konstrukteur.site.name", "Test website")
-		self.__siteUrl = main.getConfigValue("konstrukteur.site.url", "//localhost")
+        self.__siteName = main.getConfigValue("konstrukteur.site.name", "Test website")
+        self.__siteUrl = main.getConfigValue("konstrukteur.site.url", "//localhost")
 
-		self.__pageUrl = main.getConfigValue("konstrukteur.pageUrl", "{{language}}/{{slug}}.html")
+        self.__pageUrl = main.getConfigValue("konstrukteur.pageUrl", "{{language}}/{{slug}}.html")
 
-		self.__postUrl = main.getConfigValue("konstrukteur.blog.postUrl", "{{language}}/blog/{{slug}}.html")
-		self.__archiveUrl = main.getConfigValue("konstrukteur.blog.archiveUrl", "archive.{{language}}-{{page}}.html")
-		self.__feedUrl = main.getConfigValue("konstrukteur.blog.feedUrl", "feed.{{language}}.xml")
+        self.__postUrl = main.getConfigValue("konstrukteur.blog.postUrl", "{{language}}/blog/{{slug}}.html")
+        self.__archiveUrl = main.getConfigValue("konstrukteur.blog.archiveUrl", "archive.{{language}}-{{page}}.html")
+        self.__feedUrl = main.getConfigValue("konstrukteur.blog.feedUrl", "feed.{{language}}.xml")
 
-		self.__extensions = main.getConfigValue("konstrukteur.extensions", ["markdown", "html"])
-		self.__theme = main.getConfigValue("konstrukteur.theme", main.getName())
-		self.__defaultLanguage = main.getConfigValue("konstrukteur.defaultLanguage", "en")
-		self.__fileManager = FileManager.FileManager(self.__profile)
+        self.__extensions = main.getConfigValue("konstrukteur.extensions", ["markdown", "html"])
+        self.__theme = main.getConfigValue("konstrukteur.theme", main.getName())
+        self.__defaultLanguage = main.getConfigValue("konstrukteur.defaultLanguage", "en")
+        self.__fileManager = FileManager.FileManager(self.__profile)
 
 
-	def build(self):
-		""" Build static website """
+    def build(self):
+        """ Build static website """
 
-		Console.info("Intializing Konstrukteur...")
-		Console.indent()
+        Console.info("Intializing Konstrukteur...")
+        Console.indent()
 
-		# Path configuration
-		# TODO: Use Jasy configuration instead
-		self.__templatePath = os.path.join("source", "template")
-		self.__contentPath = os.path.join("source", "content")
-		self.__sourcePath = os.path.join("source")
+        # Path configuration
+        # TODO: Use Jasy configuration instead
+        self.__templatePath = os.path.join("source", "template")
+        self.__contentPath = os.path.join("source", "content")
+        self.__sourcePath = os.path.join("source")
 
-		self.__pagePath = os.path.join(self.__contentPath, "page")
-		self.__postPath = os.path.join(self.__contentPath, "post")
+        self.__pagePath = os.path.join(self.__contentPath, "page")
+        self.__postPath = os.path.join(self.__contentPath, "post")
 
-		if not os.path.exists(self.__templatePath):
-			raise RuntimeError("Path to templates not found : %s" % self.__templatePath)
-		if not os.path.exists(self.__contentPath):
-			raise RuntimeError("Path to content not found : %s" % self.__contentPath)
+        if not os.path.exists(self.__templatePath):
+            raise RuntimeError("Path to templates not found : %s" % self.__templatePath)
+        if not os.path.exists(self.__contentPath):
+            raise RuntimeError("Path to content not found : %s" % self.__contentPath)
 
-		# A theme could be any project registered in the current session
-		if self.__theme:
-			themeProject = session.getProjectByName(self.__theme)
-			if not themeProject:
-				raise RuntimeError("Theme '%s' not found" % self.__theme)
+        # A theme could be any project registered in the current session
+        if self.__theme:
+            themeProject = session.getProjectByName(self.__theme)
+            if not themeProject:
+                raise RuntimeError("Theme '%s' not found" % self.__theme)
 
-		self.__initializeTemplates()
-		self.__generateOutput()
+        self.__initializeTemplates()
+        self.__generateOutput()
 
-		# Start actual file watcher
-		if self.__regenerate:
-			# We need to pause the session for not blocking the cache
-			self.__session.pause()
+        # Start actual file watcher
+        if self.__regenerate:
+            # We need to pause the session for not blocking the cache
+            self.__session.pause()
 
-			fileChangeEventHandler = konstrukteur.FileWatcher.FileChangeEventHandler()
+            fileChangeEventHandler = konstrukteur.FileWatcher.FileChangeEventHandler()
 
-			observer = Observer()
-			observer.schedule(fileChangeEventHandler, self.__sourcePath, recursive=True)
-			observer.start()
+            observer = Observer()
+            observer.schedule(fileChangeEventHandler, self.__sourcePath, recursive=True)
+            observer.start()
 
-			try:
-				Console.info("Waiting for file changes (abort with CTRL-C)")
-				while True:
-					time.sleep(1)
-					if fileChangeEventHandler.dirty:
-						fileChangeEventHandler.dirty = False
-						self.__generateOutput()
-			except KeyboardInterrupt:
-				observer.stop()
+            try:
+                Console.info("Waiting for file changes (abort with CTRL-C)")
+                while True:
+                    time.sleep(1)
+                    if fileChangeEventHandler.dirty:
+                        fileChangeEventHandler.dirty = False
+                        self.__generateOutput()
+            except KeyboardInterrupt:
+                observer.stop()
 
-			observer.join()
+            observer.join()
 
-			# Resume the session after exciting
-			self.__session.resume()
+            # Resume the session after exciting
+            self.__session.resume()
 
-		Console.outdent()
+        Console.outdent()
 
 
-	def __generateOutput(self):
-		""" Build static website """
+    def __generateOutput(self):
+        """ Build static website """
 
-		Console.info("Building website....")
-		Console.indent()
+        Console.info("Building website....")
+        Console.indent()
 
-		self.__parseContent()
-		self.__outputContent()
+        self.__parseContent()
+        self.__outputContent()
 
-		Console.info("Website successfully build!")
+        Console.info("Website successfully build!")
 
 
 
-	def __initializeTemplates(self):
-		""" Process all templates to support jasy commands """
+    def __initializeTemplates(self):
+        """ Process all templates to support jasy commands """
 
-		# Build a map of all known templates
-		self.__templates = {}
-		for project in session.getProjects():
-			templates = project.getItems("jasy.Template")
-			if templates:
-				for name, item in templates.items():
-					self.__templates[name] = item.getText()
+        # Build a map of all known templates
+        self.__templates = {}
+        for project in session.getProjects():
+            templates = project.getItems("jasy.Template")
+            if templates:
+                for name, item in templates.items():
+                    self.__templates[name] = item.getText()
 
-		for name in self.__templates:
-			content = self.__templates[name]
-			# tree = TemplateParser.parse(content)
-			compiled = TemplateCompiler.compile(content)
-			self.__templates[name] = compiled
+        for name in self.__templates:
+            content = self.__templates[name]
+            # tree = TemplateParser.parse(content)
+            compiled = TemplateCompiler.compile(content)
+            self.__templates[name] = compiled
 
-			print("Compiled Template: ", name, "=>", compiled)
+            print("Compiled Template: ", name, "=>", compiled)
 
 
-	def __parseContent(self):
-		""" Parse all content items in users content directory """
+    def __parseContent(self):
+        """ Parse all content items in users content directory """
 
-		contentParser = ContentParser.ContentParser(self.__extensions, self.__defaultLanguage)
+        contentParser = ContentParser.ContentParser(self.__extensions, self.__defaultLanguage)
 
-		Console.info("Parsing content...")
-		Console.indent()
+        Console.info("Parsing content...")
+        Console.indent()
 
-		self.__pages = contentParser.parse(self.__pagePath)
-		self.__posts = contentParser.parse(self.__postPath)
-		self.__languages = contentParser.getLanguages()
+        self.__pages = contentParser.parse(self.__pagePath)
+        self.__posts = contentParser.parse(self.__postPath)
+        self.__languages = contentParser.getLanguages()
 
-		Console.outdent()
-		Console.info("Processing locales...")
-		Console.indent()
+        Console.outdent()
+        Console.info("Processing locales...")
+        Console.indent()
 
-		for language in self.__languages:
-			self.__locales[language] = konstrukteur.Language.LocaleParser(language)
+        for language in self.__languages:
+            self.__locales[language] = konstrukteur.Language.LocaleParser(language)
 
-		Console.outdent()
+        Console.outdent()
 
 
 
@@ -222,161 +222,161 @@ class Konstrukteur:
 
 
 
-	def __createPage(self, slug, title, content):
-		contentParser = ContentParser.ContentParser(self.__extensions, self.__defaultLanguage)
-		return contentParser.generateFields({
-			"slug": slug,
-			"title": title,
-			"content": content
-		}, self.__languages)
+    def __createPage(self, slug, title, content):
+        contentParser = ContentParser.ContentParser(self.__extensions, self.__defaultLanguage)
+        return contentParser.generateFields({
+            "slug": slug,
+            "title": title,
+            "content": content
+        }, self.__languages)
 
 
-	def __generateArchive(self):
-		archivePages = []
-		archiveItemsPerPage = self.config["blog"]["archiveItemsPerPage"]
+    def __generateArchive(self):
+        archivePages = []
+        archiveItemsPerPage = self.config["blog"]["archiveItemsPerPage"]
 
-		if not type(self.config["blog"]["archiveTitle"]) == dict:
-			archiveTitleLang = {}
-			for language in self.__languages:
-				archiveTitleLang[language] = self.config["blog"]["archiveTitle"]
-			self.config["blog"]["archiveTitle"] = archiveTitleLang
+        if not type(self.config["blog"]["archiveTitle"]) == dict:
+            archiveTitleLang = {}
+            for language in self.__languages:
+                archiveTitleLang[language] = self.config["blog"]["archiveTitle"]
+            self.config["blog"]["archiveTitle"] = archiveTitleLang
 
-		for language in self.__languages:
+        for language in self.__languages:
 
-			archiveTitle = self.config["blog"]["archiveTitle"][language] if "archiveTitle" in self.config["blog"] else "Index %d"
-			sortedPosts = self.__getSortedPosts(language)
+            archiveTitle = self.config["blog"]["archiveTitle"][language] if "archiveTitle" in self.config["blog"] else "Index %d"
+            sortedPosts = self.__getSortedPosts(language)
 
-			pos = 0
-			page = 1
+            pos = 0
+            page = 1
 
-			while pos < len(sortedPosts):
-				renderModel = {
-					"pageno" : page,
-					"lang" : language
-				}
+            while pos < len(sortedPosts):
+                renderModel = {
+                    "pageno" : page,
+                    "lang" : language
+                }
 
-				archiveTitle = Util.replaceFields(archiveTitle, renderModel)
+                archiveTitle = Util.replaceFields(archiveTitle, renderModel)
 
-				archivePage = self.__createPage("archive-%d" % page, archiveTitle, "")
-				archivePages.append(archivePage)
+                archivePage = self.__createPage("archive-%d" % page, archiveTitle, "")
+                archivePages.append(archivePage)
 
-				archivePage["post"] = sortedPosts[pos:archiveItemsPerPage+pos]
-				archivePage["pageno"] = page
+                archivePage["post"] = sortedPosts[pos:archiveItemsPerPage+pos]
+                archivePage["pageno"] = page
 
-				pos += archiveItemsPerPage
-				page += 1
+                pos += archiveItemsPerPage
+                page += 1
 
-		return archivePages
+        return archivePages
 
 
-	def __getSortedPosts(self, language):
-		return sorted([post for post in self.__posts if post["lang"] == language], key=self.__postSorter)
+    def __getSortedPosts(self, language):
+        return sorted([post for post in self.__posts if post["lang"] == language], key=self.__postSorter)
 
 
-	def __outputContent(self):
-		""" Output processed content to HTML """
+    def __outputContent(self):
+        """ Output processed content to HTML """
 
-		Console.info("Generating public files...")
-		Console.indent()
+        Console.info("Generating public files...")
+        Console.indent()
 
-		# Process all content types
-		# Posts must be generated before archive
-		for contentType in ["post", "archive", "page"]:
-			if contentType == "post":
-				urlTemplate = self.__postUrl
-				items = self.__posts
-			elif contentType == "archive":
-				urlTemplate = self.__archiveUrl
-				items = self.__generateArchive()
-			elif contentType == "page":
-				urlTemplate = self.__pageUrl
-				items = self.__pages
+        # Process all content types
+        # Posts must be generated before archive
+        for contentType in ["post", "archive", "page"]:
+            if contentType == "post":
+                urlTemplate = self.__postUrl
+                items = self.__posts
+            elif contentType == "archive":
+                urlTemplate = self.__archiveUrl
+                items = self.__generateArchive()
+            elif contentType == "page":
+                urlTemplate = self.__pageUrl
+                items = self.__pages
 
-			# Preparing template
-			templateName = "%(theme)s.%(type)s" % {
-				"theme": self.__theme,
-				"type": contentType[0].upper() + contentType[1:]
-			}
+            # Preparing template
+            templateName = "%(theme)s.%(type)s" % {
+                "theme": self.__theme,
+                "type": contentType[0].upper() + contentType[1:]
+            }
 
-			if not templateName in self.__templates:
-				raise RuntimeError("Template %s not found" % templateName)
+            if not templateName in self.__templates:
+                raise RuntimeError("Template %s not found" % templateName)
 
-			template = self.__templates[templateName]
+            template = self.__templates[templateName]
 
-			# Profile shorthands
-			profileId = self.__profile.getId()
-			destinationPath = self.__profile.getDestinationPath()
+            # Profile shorthands
+            profileId = self.__profile.getId()
+            destinationPath = self.__profile.getDestinationPath()
 
-			# Create individual output files
-			length = str(len(items))
-			padding = len(length)
+            # Create individual output files
+            length = str(len(items))
+            padding = len(length)
 
-			for pos, currentItem in enumerate(items):
-				itemSlug = currentItem["slug"]
-				itemMtime = currentItem["mtime"]
+            for pos, currentItem in enumerate(items):
+                itemSlug = currentItem["slug"]
+                itemMtime = currentItem["mtime"]
 
-				filePath = Util.replaceFields(urlTemplate, currentItem)
-				outputFilename = os.path.join(destinationPath, filePath)
+                filePath = Util.replaceFields(urlTemplate, currentItem)
+                outputFilename = os.path.join(destinationPath, filePath)
 
-				Console.info("Generating %s %s/%s: %s...", contentType, str(pos+1).zfill(padding), length, outputFilename)
+                Console.info("Generating %s %s/%s: %s...", contentType, str(pos+1).zfill(padding), length, outputFilename)
 
-				renderModel = self.__generateRenderModel(currentItem, contentType)
+                renderModel = self.__generateRenderModel(currentItem, contentType)
 
-				# Use cache for speed-up re-runs
-				# Using for pages and posts only as archive pages depend on changes in any of these
-				if contentType == "archive":
-					cacheId = None
-					resultContent = None
-				else:
-					cacheId = "%s-%s-%s" % (contentType, itemSlug, profileId)
-					#resultContent = self.__cache.read(cacheId, itemMtime)
-					resultContent = None
+                # Use cache for speed-up re-runs
+                # Using for pages and posts only as archive pages depend on changes in any of these
+                if contentType == "archive":
+                    cacheId = None
+                    resultContent = None
+                else:
+                    cacheId = "%s-%s-%s" % (contentType, itemSlug, profileId)
+                    #resultContent = self.__cache.read(cacheId, itemMtime)
+                    resultContent = None
 
-				# Check cache validity
-				if resultContent is None:
-					resultContent = template.render(renderModel)
+                # Check cache validity
+                if resultContent is None:
+                    resultContent = template.render(renderModel)
 
-					# Store result into cache when caching is enabled (non archive pages only)
-					#if cacheId:
-					#	self.__cache.store(cacheId, resultContent, itemMtime)
+                    # Store result into cache when caching is enabled (non archive pages only)
+                    #if cacheId:
+                    #   self.__cache.store(cacheId, resultContent, itemMtime)
 
-				# Write actual output file
-				self.__fileManager.writeFile(outputFilename, resultContent)
+                # Write actual output file
+                self.__fileManager.writeFile(outputFilename, resultContent)
 
-		Console.outdent()
+        Console.outdent()
 
-		if self.__posts:
-			Console.info("Generating feed...")
-			Console.indent()
+        if self.__posts:
+            Console.info("Generating feed...")
+            Console.indent()
 
-			for language in self.__languages:
-				sortedPosts = self.__getSortedPosts(language)
+            for language in self.__languages:
+                sortedPosts = self.__getSortedPosts(language)
 
-				renderModel = {
-					'config' : self.config,
-					'site' : {
-						'name' : self.__siteName,
-						'url' : self.__siteUrl
-					},
-					"current" : {
-						"lang" : language
-					},
-					"feedUrl" : feedUrl,
-					"now" : datetime.datetime.now(tz=dateutil.tz.tzlocal()).replace(microsecond=0).isoformat(),
-					"post" : sortedPosts[:self.config["blog"]["itemsInFeed"]]
-				}
+                renderModel = {
+                    'config' : self.config,
+                    'site' : {
+                        'name' : self.__siteName,
+                        'url' : self.__siteUrl
+                    },
+                    "current" : {
+                        "lang" : language
+                    },
+                    "feedUrl" : feedUrl,
+                    "now" : datetime.datetime.now(tz=dateutil.tz.tzlocal()).replace(microsecond=0).isoformat(),
+                    "post" : sortedPosts[:self.config["blog"]["itemsInFeed"]]
+                }
 
-				outputContent = self.__safeRenderer.render(self.__templates["%s.Feed" % self.__theme], renderModel)
-				outputFilename = self.__profile.expandFileName(os.path.join(self.__profile.getDestinationPath(), feedUrl))
-				self.__fileManager.writeFile(outputFilename, outputContent)
+                outputContent = self.__safeRenderer.render(self.__templates["%s.Feed" % self.__theme], renderModel)
+                outputFilename = self.__profile.expandFileName(os.path.join(self.__profile.getDestinationPath(), feedUrl))
+                self.__fileManager.writeFile(outputFilename, outputContent)
 
-			Console.outdent()
+            Console.outdent()
 
 
 
 
-	def __postSorter(self, item):
-		return item["date"]
+    def __postSorter(self, item):
+        return item["date"]
 
 
 
@@ -385,46 +385,46 @@ class Konstrukteur:
 
 
 
-	def __getItemLanguages(self, item):
-		""" Annotate languges list with information about current language """
+    def __getItemLanguages(self, item):
+        """ Annotate languges list with information about current language """
 
-		if "translations" not in item:
-			return None
+        if "translations" not in item:
+            return None
 
-		languages = self.__languages
+        languages = self.__languages
 
-		def languageMap(value):
-			isCurrent = value == item["lang"]
-			localizedName = self.__locales[value].getName(value)
-			relativeUrl = "." if isCurrent else item["translations"][value]
+        def languageMap(value):
+            isCurrent = value == item["lang"]
+            localizedName = self.__locales[value].getName(value)
+            relativeUrl = "." if isCurrent else item["translations"][value]
 
-			return {
-				"code" : value,
-				"name" : localizedName,
-				"isCurrent" : isCurrent,
-				"relativeUrl" : relativeUrl
-			}
+            return {
+                "code" : value,
+                "name" : localizedName,
+                "isCurrent" : isCurrent,
+                "relativeUrl" : relativeUrl
+            }
 
-		return list(map(languageMap, languages))
+        return list(map(languageMap, languages))
 
 
-	def __getFilteredPages(self, currentItem):
-		""" Return sorted list of only pages of same language and not hidden """
+    def __getFilteredPages(self, currentItem):
+        """ Return sorted list of only pages of same language and not hidden """
 
-		pages = self.__pages
-		currentLang = currentItem["lang"]
-		pageList = [ pageItem for pageItem in pages if pageItem["lang"] == currentLang and not pageItem["status"] == "hidden" ]
+        pages = self.__pages
+        currentLang = currentItem["lang"]
+        pageList = [ pageItem for pageItem in pages if pageItem["lang"] == currentLang and not pageItem["status"] == "hidden" ]
 
-		return sorted(pageList, key=lambda pageItem: JasyUtil.getKey(pageItem, "pos", 1000000))
+        return sorted(pageList, key=lambda pageItem: JasyUtil.getKey(pageItem, "pos", 1000000))
 
 
-	def __generateRenderModel(self, currentItem, contentType):
-		renderModel = {}
+    def __generateRenderModel(self, currentItem, contentType):
+        renderModel = {}
 
-		renderModel["type"] = contentType
-		renderModel["current"] = currentItem
-		renderModel["pages"] = self.__getFilteredPages(currentItem)
-		renderModel["config"] = self.config
-		renderModel["languages"] = self.__getItemLanguages(currentItem)
+        renderModel["type"] = contentType
+        renderModel["current"] = currentItem
+        renderModel["pages"] = self.__getFilteredPages(currentItem)
+        renderModel["config"] = self.config
+        renderModel["languages"] = self.__getItemLanguages(currentItem)
 
-		return renderModel
+        return renderModel

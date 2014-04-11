@@ -8,10 +8,10 @@ import watchdog.events
 
 class FileChangeEventHandler(watchdog.events.FileSystemEventHandler):
 
-	def __init__(self):
-		self.dirty = False
+    def __init__(self):
+        self.dirty = False
 
-	def on_any_event(self, event):
-		super(FileChangeEventHandler, self).on_any_event(event)
+    def on_any_event(self, event):
+        super(FileChangeEventHandler, self).on_any_event(event)
 
-		self.dirty = True
+        self.dirty = True
