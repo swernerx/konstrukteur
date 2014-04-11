@@ -9,7 +9,7 @@ __all__ = ["parse"]
 from bs4 import BeautifulSoup
 
 def parse(filename):
-    """ HTML Parser class for Konstrukteur """
+    """HTML Parser class for Konstrukteur."""
 
     page = {}
 

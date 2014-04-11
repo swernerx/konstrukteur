@@ -15,9 +15,7 @@ __version__ = "0.1.15"
 __author__ = "Sebastian Fastner <mail@sebastianfastner.de>"
 
 def info():
-    """
-    Prints information about Jasy to the console.
-    """
+    """Prints information about Jasy to the console."""
 
     import jasy.core.Console as Console
 
@@ -27,7 +25,7 @@ def info():
 
 
 class UserError(Exception):
-    """
-    Standard Konstrukteur error class raised whenever something happens which the system understands (somehow excepected)
-    """
+
+    """Standard Konstrukteur error class raised whenever something happens which the system understands (somehow
+    excepected)"""
     pass

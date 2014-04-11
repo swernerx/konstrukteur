@@ -28,7 +28,8 @@ def camelCaseToUpper(input):
     return "".join(result)
 
 class LocaleParser():
-    """Parses CLDR locales into JavaScript files"""
+
+    """Parses CLDR locales into JavaScript files."""
 
     def __init__(self, locale):
         Console.info("Parsing CLDR files for %s..." % locale)
@@ -62,8 +63,8 @@ class LocaleParser():
             tree = xml.etree.ElementTree.parse(path)
 
         self.__data["key"] = {
-            "Short" : { key.get("type"): key.text for key in tree.findall("./keys/short/key") },
-            "Full" : { key.get("type"): key.text for key in tree.findall("./keys/full/key") }
+            "Short" : {key.get("type"): key.text for key in tree.findall("./keys/short/key")},
+            "Full" : {key.get("type"): key.text for key in tree.findall("./keys/full/key")}
         }
 
         # Add main CLDR data: Fallback chain for locales
@@ -88,17 +89,17 @@ class LocaleParser():
             tree = xml.etree.ElementTree.parse(path)
 
             self.__addDisplayNames(tree)
-            #self.__addDelimiters(tree)
-            #self.__addCalendars(tree)
-            #self.__addNumbers(tree)
+            # self.__addDelimiters(tree)
+            # self.__addCalendars(tree)
+            # self.__addNumbers(tree)
 
         # Add supplemental CLDR data
-        #self.__addSupplementals(self.__territory)
+        # self.__addSupplementals(self.__territory)
 
         Console.outdent()
 
     def __addDisplayNames(self, tree):
-        """ Adds CLDR display names section """
+        """Adds CLDR display names section."""
 
         display = self.__getStore(self.__data, "display")
 
@@ -120,7 +121,7 @@ class LocaleParser():
 
 
     def __getStore(self, parent, name):
-        """ Manages data fields """
+        """Manages data fields."""
 
         if not name in parent:
             store = {}

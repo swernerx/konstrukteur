@@ -70,9 +70,9 @@ class Template:
     # the template class is to create one using the {core.template.Compiler#compile} method.
     #
     def __init__(self, render, text, name):
-        self.__render = render;
-        self.__text = text;
-        self.__name = name;
+        self.__render = render
+        self.__text = text
+        self.__name = name
 
 
     def render(self, data, partials=None, labels=None):
@@ -83,10 +83,10 @@ class Template:
 
         try:
             # Need to inject self again as the method applied to 'self' is not bound to the instance in the classical way
-            return self.__render(self, data, partials, labels);
+            return self.__render(self, data, partials, labels)
         except ex:
-            Console.error("Unable to render template " + (self.__name or ""));
-            raise ex;
+            Console.error("Unable to render template " + (self.__name or ""))
+            raise ex
 
 
     def _variable(self, key, method, data):
@@ -95,7 +95,7 @@ class Template:
         using the given accessor @method {Integer} as HTML escaped variable.
         """
 
-        value = accessor[method](key, data);
+        value = accessor[method](key, data)
         if value is None:
             return ""
 
@@ -108,7 +108,7 @@ class Template:
         using the given accessor @method {Integer} as raw data.
         """
 
-        value = accessor[method](key, data);
+        value = accessor[method](key, data)
         if value is None:
             return ""
 
@@ -116,15 +116,13 @@ class Template:
 
 
     def _partial(self, name, data, partials, labels):
-        """
-        {String} Tries to find a partial in the current scope and render it
-        """
+        """{String} Tries to find a partial in the current scope and render it."""
 
         if partials and name in partials:
-            return partials[name].__render(data, partials, labels);
+            return partials[name].__render(data, partials, labels)
 
-        Console.warn("Could not find partial: " + name);
-        return "";
+        Console.warn("Could not find partial: " + name)
+        return ""
 
 
     def _label(self, name, data, partials, labels):
@@ -151,9 +149,9 @@ class Template:
         defined @partials {Map} and @labels {Map} and a @section {Function} specific renderer.
         """
 
-        value = accessor[method](key, data);
+        value = accessor[method](key, data)
         if value is not None:
-            if type(value) is list:
+            if isinstance(value, list):
                 for pos, entry in enumerate(value):
                     section(self, value[pos], partials, labels)
             else:

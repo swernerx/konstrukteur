@@ -47,6 +47,7 @@ def replaceFields(input, data):
 
 
 class CustomJsonEncoder(json.JSONEncoder):
+
     def default(self, obj):
         if callable(obj):
             return "<callable>"

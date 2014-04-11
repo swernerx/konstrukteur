@@ -52,7 +52,7 @@ def walk(node, labels, nostrip, indent):
     prefix = indent * indentString
 
     for current in node:
-        if type(current) == str:
+        if isinstance(current, str):
             code += prefix + 'buf += "' + escapeMatcher(current) + '"\n'
         elif current["tag"] == "\n":
             code += prefix + 'buf += "\\n"\n'
@@ -72,7 +72,7 @@ def walk(node, labels, nostrip, indent):
                 accessorCode = '"' + escaped + '","' + str(accessor) + '",data'
 
                 if tag in innerTags:
-                    innerCode = walk(current["nodes"], labels, nostrip, indent+1)
+                    innerCode = walk(current["nodes"], labels, nostrip, indent + 1)
 
                 if tag == "?":
                     code += prefix + 'if self._has(' + accessorCode + '):\n' + innerCode + '\n'
@@ -81,19 +81,19 @@ def walk(node, labels, nostrip, indent):
                 elif tag == "#":
                     innerCounter += 1
                     # Let 'buf' be nonlocal for sharing parent scope's variable
-                    nonlocalCode = ((indent+1) * indentString) + "nonlocal buf\n"
+                    nonlocalCode = ((indent + 1) * indentString) + "nonlocal buf\n"
                     code += prefix + ('def inner%s(self, data, partials, labels):\n' % innerCounter) + nonlocalCode + innerCode + '\n'
                     code += prefix + 'self._section(' + accessorCode + ', partials, labels, inner%s)\n' % innerCounter
                 elif tag == "=":
                     code += prefix + 'buf += self._data(' + accessorCode + ')\n'
                 elif tag == "$":
-                    code += prefix + 'buf += self._variable(' + accessorCode + ')\n';
+                    code += prefix + 'buf += self._variable(' + accessorCode + ')\n'
 
             elif tag == ">":
                 code += prefix + 'buf += self._partial("' + escaped + '",data, partials, labels)\n'
             elif tag == "_":
                 if labels and escaped in labels:
-                    code += walk(Parser.parse(labels[escaped], True), labels, indent+1);
+                    code += walk(Parser.parse(labels[escaped], True), labels, indent + 1)
                 else:
                     code += prefix + 'buf += self._label("' + escaped + '", data, partials, labels)\n'
 

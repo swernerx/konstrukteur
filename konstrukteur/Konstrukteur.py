@@ -5,10 +5,13 @@
 #
 
 # Little helper to allow python modules in libs path
-import sys, os.path, inspect, json
+import sys
+import os.path
+import inspect
+import json
 filename = inspect.getframeinfo(inspect.currentframe()).filename
 path = os.path.join(os.path.dirname(os.path.abspath(filename)), "..", "konstrukteurlibs", "watchdog", "src")
-sys.path.insert(0,path)
+sys.path.insert(0, path)
 
 
 __all__ = ["build"]
@@ -44,28 +47,29 @@ import konstrukteur.Template as Template
 
 
 class Konstrukteur:
-    """ Core application class for Konstrukteur """
 
-    config = None # Dict
+    """Core application class for Konstrukteur."""
+
+    config = None  # Dict
 
     __siteName = None
     __siteUrl = None
 
     __theme = None
 
-    __defaultLanguage = None # String
-    __extensions = None # List
+    __defaultLanguage = None  # String
+    __extensions = None  # List
 
-    __regenerate = False # Boolean
-    __templates = None # List
-    __pages = None # List
-    __languages = None # Set
-    __locales = None # Dict
+    __regenerate = False  # Boolean
+    __templates = None  # List
+    __pages = None  # List
+    __languages = None  # Set
+    __locales = None  # Dict
 
-    __postUrl = None # Template String
-    __pageUrl = None # Template String
-    __feedUrl = None # Template String
-    __archiveUrl = None # Template String
+    __postUrl = None  # Template String
+    __pageUrl = None  # Template String
+    __feedUrl = None  # Template String
+    __archiveUrl = None  # Template String
 
     __renderer = None
     __fileManager = None
@@ -103,7 +107,7 @@ class Konstrukteur:
 
 
     def build(self):
-        """ Build static website """
+        """Build static website."""
 
         Console.info("Intializing Konstrukteur...")
         Console.indent()
@@ -161,7 +165,7 @@ class Konstrukteur:
 
 
     def __generateOutput(self):
-        """ Build static website """
+        """Build static website."""
 
         Console.info("Building website....")
         Console.indent()
@@ -174,7 +178,7 @@ class Konstrukteur:
 
 
     def __initializeTemplates(self):
-        """ Process all templates to support jasy commands """
+        """Process all templates to support jasy commands."""
 
         # Build a map of all known templates
         self.__templates = {}
@@ -194,7 +198,7 @@ class Konstrukteur:
 
 
     def __parseContent(self):
-        """ Parse all content items in users content directory """
+        """Parse all content items in users content directory."""
 
         contentParser = ContentParser.ContentParser(self.__extensions, self.__defaultLanguage)
 
@@ -235,7 +239,7 @@ class Konstrukteur:
         archivePages = []
         archiveItemsPerPage = self.config["blog"]["archiveItemsPerPage"]
 
-        if not type(self.config["blog"]["archiveTitle"]) == dict:
+        if not isinstance(self.config["blog"]["archiveTitle"], dict):
             archiveTitleLang = {}
             for language in self.__languages:
                 archiveTitleLang[language] = self.config["blog"]["archiveTitle"]
@@ -260,7 +264,7 @@ class Konstrukteur:
                 archivePage = self.__createPage("archive-%d" % page, archiveTitle, "")
                 archivePages.append(archivePage)
 
-                archivePage["post"] = sortedPosts[pos:archiveItemsPerPage+pos]
+                archivePage["post"] = sortedPosts[pos:archiveItemsPerPage + pos]
                 archivePage["pageno"] = page
 
                 pos += archiveItemsPerPage
@@ -274,7 +278,7 @@ class Konstrukteur:
 
 
     def __outputContent(self):
-        """ Output processed content to HTML """
+        """Output processed content to HTML."""
 
         Console.info("Generating public files...")
         Console.indent()
@@ -318,7 +322,7 @@ class Konstrukteur:
                 filePath = Util.replaceFields(urlTemplate, currentItem)
                 outputFilename = os.path.join(destinationPath, filePath)
 
-                Console.info("Generating %s %s/%s: %s...", contentType, str(pos+1).zfill(padding), length, outputFilename)
+                Console.info("Generating %s %s/%s: %s...", contentType, str(pos + 1).zfill(padding), length, outputFilename)
 
                 renderModel = self.__generateRenderModel(currentItem, contentType)
 
@@ -337,7 +341,7 @@ class Konstrukteur:
                     resultContent = template.render(renderModel)
 
                     # Store result into cache when caching is enabled (non archive pages only)
-                    #if cacheId:
+                    # if cacheId:
                     #   self.__cache.store(cacheId, resultContent, itemMtime)
 
                 # Write actual output file
@@ -386,7 +390,7 @@ class Konstrukteur:
 
 
     def __getItemLanguages(self, item):
-        """ Annotate languges list with information about current language """
+        """Annotate languges list with information about current language."""
 
         if "translations" not in item:
             return None
@@ -409,11 +413,11 @@ class Konstrukteur:
 
 
     def __getFilteredPages(self, currentItem):
-        """ Return sorted list of only pages of same language and not hidden """
+        """Return sorted list of only pages of same language and not hidden."""
 
         pages = self.__pages
         currentLang = currentItem["lang"]
-        pageList = [ pageItem for pageItem in pages if pageItem["lang"] == currentLang and not pageItem["status"] == "hidden" ]
+        pageList = [pageItem for pageItem in pages if pageItem["lang"] == currentLang and not pageItem["status"] == "hidden"]
 
         return sorted(pageList, key=lambda pageItem: JasyUtil.getKey(pageItem, "pos", 1000000))
 

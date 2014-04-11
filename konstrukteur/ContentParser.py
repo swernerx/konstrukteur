@@ -4,7 +4,10 @@
 # Copyright 2014 Sebastian Werner
 #
 
-import glob, os, sys, dateutil
+import glob
+import os
+import sys
+import dateutil
 
 import jasy.core.Console as Console
 import jasy.core.File as File
@@ -14,7 +17,8 @@ import konstrukteur.Util as Util
 import konstrukteur.MarkdownParser
 
 class ContentParser:
-    """ Content parser class for Konstrukteur """
+
+    """Content parser class for Konstrukteur."""
 
     def __init__(self, extensions, defaultLanguage="en"):
         self.__extensions = extensions
@@ -91,11 +95,10 @@ class ContentParser:
 
 
     def __delegatedParse(self, filename, extension):
-        """ Parse single content file """
+        """Parse single content file."""
 
         if not extension in self.__extensionParser:
             raise RuntimeError("No parser for extension %s registered!" % extension)
 
         # Delegate to main parser
         return self.__extensionParser[extension].parse(filename)
-

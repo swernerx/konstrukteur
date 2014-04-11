@@ -18,7 +18,7 @@ def replaceJasyCommand(matchobj):
     return cmd
 
 def parse(filename):
-    """ Markdown Parser class for Konstrukteur """
+    """Markdown Parser class for Konstrukteur."""
 
     page = {}
 
