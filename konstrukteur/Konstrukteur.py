@@ -359,13 +359,14 @@ class Konstrukteur:
                     "current" : {
                         "lang" : language
                     },
-                    "feedUrl" : feedUrl,
+                    "feedUrl" : self.__feedUrl,
                     "now" : datetime.datetime.now(tz=dateutil.tz.tzlocal()).replace(microsecond=0).isoformat(),
                     "post" : sortedPosts[:self.config["blog"]["itemsInFeed"]]
                 }
 
-                outputContent = self.__safeRenderer.render(self.__templates["%s.Feed" % self.__theme], renderModel)
-                outputFilename = self.__profile.expandFileName(os.path.join(self.__profile.getDestinationPath(), feedUrl))
+                template = self.__templates["%s.Feed" % self.__theme]
+                outputContent = template.render(renderModel)
+                outputFilename = os.path.join(destinationPath, self.__feedUrl)
                 self.__fileManager.writeFile(outputFilename, outputContent)
 
             Console.outdent()
