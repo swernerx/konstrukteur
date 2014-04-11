@@ -224,20 +224,9 @@ class Konstrukteur:
 
 
 
-
-
-    def __createPage(self, slug, title, content):
-        contentParser = ContentParser.ContentParser(self.__extensions, self.__defaultLanguage)
-        return contentParser.generateFields({
-            "slug": slug,
-            "title": title,
-            "content": content
-        }, self.__languages)
-
-
     def __generateArchive(self):
-        archivePages = []
-        archiveItemsPerPage = self.config["blog"]["archiveItemsPerPage"]
+        pages = []
+        itemsPerPage = self.config["blog"]["archiveItemsPerPage"]
 
         if not isinstance(self.config["blog"]["archiveTitle"], dict):
             archiveTitleLang = {}
@@ -251,26 +240,31 @@ class Konstrukteur:
             sortedPosts = self.__getSortedPosts(language)
 
             pos = 0
-            page = 1
+            pageno = 1
 
             while pos < len(sortedPosts):
                 renderModel = {
-                    "pageno" : page,
+                    "pageno" : pageno,
                     "lang" : language
                 }
 
                 archiveTitle = Util.replaceFields(archiveTitle, renderModel)
 
-                archivePage = self.__createPage("archive-%d" % page, archiveTitle, "")
-                archivePages.append(archivePage)
+                archivePage = {
+                    "slug" : "archive-%d" % pageno,
+                    "title" : archiveTitle,
+                    "posts" :  sortedPosts[pos:itemsPerPage + pos],
+                    "pageno" : pageno,
+                    "mtime" : None,  # Fully generated content
+                    "lang" : language
+                }
 
-                archivePage["post"] = sortedPosts[pos:archiveItemsPerPage + pos]
-                archivePage["pageno"] = page
+                pages.append(archivePage)
+                pageno += 1
 
-                pos += archiveItemsPerPage
-                page += 1
+                pos += itemsPerPage
 
-        return archivePages
+        return pages
 
 
     def __getSortedPosts(self, language):
