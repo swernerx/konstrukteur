@@ -348,6 +348,21 @@ class Konstrukteur:
 
 
 
+    def __generatePosts(self):
+
+
+
+
+    def __generateArchives(self):
+
+
+
+    def __generatePages(self):
+
+
+
+
+
     def __generateFeed(self):
         if not self.__posts:
             return
