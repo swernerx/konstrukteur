@@ -224,7 +224,7 @@ class Konstrukteur:
 
 
 
-    def __generateArchive(self):
+    def __generateArchiveData(self):
         pages = []
         itemsPerPage = self.config["blog"]["archiveItemsPerPage"]
 
@@ -277,87 +277,88 @@ class Konstrukteur:
         Console.info("Generating public files...")
         Console.indent()
 
-        # Process all content types
-        # Posts must be generated before archive
-        for contentType in ["post", "archive", "page"]:
-            if contentType == "post":
-                urlTemplate = self.__postUrl
-                items = self.__posts
-            elif contentType == "archive":
-                urlTemplate = self.__archiveUrl
-                items = self.__generateArchive()
-            elif contentType == "page":
-                urlTemplate = self.__pageUrl
-                items = self.__pages
-
-            # Preparing template
-            templateName = "%(theme)s.%(type)s" % {
-                "theme": self.__theme,
-                "type": contentType[0].upper() + contentType[1:]
-            }
-
-            if not templateName in self.__templates:
-                raise RuntimeError("Template %s not found" % templateName)
-
-            template = self.__templates[templateName]
-
-            # Profile shorthands
-            profileId = self.__profile.getId()
-            destinationPath = self.__profile.getDestinationPath()
-
-            # Create individual output files
-            length = str(len(items))
-            padding = len(length)
-
-            for pos, currentItem in enumerate(items):
-                itemSlug = currentItem["slug"]
-                itemMtime = currentItem["mtime"]
-
-                filePath = Util.replaceFields(urlTemplate, currentItem)
-                outputFilename = os.path.join(destinationPath, filePath)
-
-                Console.info("Generating %s %s/%s: %s...", contentType, str(pos + 1).zfill(padding), length, outputFilename)
-
-                renderModel = self.__generateRenderModel(currentItem, contentType)
-
-                # Use cache for speed-up re-runs
-                # Using for pages and posts only as archive pages depend on changes in any of these
-                if contentType == "archive":
-                    cacheId = None
-                    resultContent = None
-                else:
-                    cacheId = "%s-%s-%s" % (contentType, itemSlug, profileId)
-                    #resultContent = self.__cache.read(cacheId, itemMtime)
-                    resultContent = None
-
-                # Check cache validity
-                if resultContent is None:
-                    resultContent = template.render(renderModel)
-
-                    # Store result into cache when caching is enabled (non archive pages only)
-                    # if cacheId:
-                    #   self.__cache.store(cacheId, resultContent, itemMtime)
-
-                # Write actual output file
-                self.__fileManager.writeFile(outputFilename, resultContent)
+        self.__generatePosts()
+        self.__generateArchives()
+        self.__generatePages()
+        self.__generateFeed()
 
         Console.outdent()
 
-        self.__generateFeed()
 
+
+    def __processItems(self, items):
+
+        items = self.__posts
+        length = len(items)
+        padding = len(str(length))
+
+        for pos, currentItem in enumerate(items):
+            itemSlug = currentItem["slug"]
+            itemMtime = currentItem["mtime"]
+
+            filePath = Util.replaceFields(urlTemplate, currentItem)
+            outputFilename = os.path.join(destinationPath, filePath)
+
+            Console.info("Generating %s/%s: %s...", str(pos + 1).zfill(padding), length, outputFilename)
+
+            yield
 
 
 
     def __generatePosts(self):
+        urlTemplate = self.__postUrl
+        template = self.__getTemplate("Post")
 
+        # Profile shorthands
+        profileId = self.__profile.getId()
+        destinationPath = self.__profile.getDestinationPath()
+
+        # Create individual output files
+        for item in self.__processItems(self.__posts):
+            pass
+
+            #renderModel = self.__generateRenderModel(currentItem, contentType)
+            #resultContent = template.render(renderModel)
+            #self.__fileManager.writeFile(outputFilename, resultContent)
 
 
 
     def __generateArchives(self):
+        urlTemplate = self.__archiveUrl
+        template = self.__getTemplate("Archive")
+
+        # Profile shorthands
+        profileId = self.__profile.getId()
+        destinationPath = self.__profile.getDestinationPath()
+
+        # Create individual output files
+        for item in self.__processItems(self.__generateArchiveData()):
+            pass
+
 
 
 
     def __generatePages(self):
+        urlTemplate = self.__pageUrl
+        template = self.__getTemplate("Page")
+
+        # Profile shorthands
+        profileId = self.__profile.getId()
+        destinationPath = self.__profile.getDestinationPath()
+
+        # Create individual output files
+        for item in self.__processItems(self.__pages):
+            pass
+
+
+
+
+    def __getTemplate(self, baseName):
+            templateName = "%s.%s" % (self.__theme, baseName)
+            if not templateName in self.__templates:
+                raise RuntimeError("Template %s not found" % templateName)
+
+            return self.__templates[templateName]
 
 
 
