@@ -286,11 +286,13 @@ class Konstrukteur:
 
 
 
-    def __processItems(self, items):
-
-        items = self.__posts
+    def __processItems(self, items, urlTemplate):
         length = len(items)
         padding = len(str(length))
+
+        # Profile shorthands
+        profileId = self.__profile.getId()
+        destinationPath = self.__profile.getDestinationPath()
 
         for pos, currentItem in enumerate(items):
             itemSlug = currentItem["slug"]
@@ -306,15 +308,10 @@ class Konstrukteur:
 
 
     def __generatePosts(self):
-        urlTemplate = self.__postUrl
         template = self.__getTemplate("Post")
 
-        # Profile shorthands
-        profileId = self.__profile.getId()
-        destinationPath = self.__profile.getDestinationPath()
-
         # Create individual output files
-        for item in self.__processItems(self.__posts):
+        for item in self.__processItems(self.__posts, self.__postUrl):
             pass
 
             #renderModel = self.__generateRenderModel(currentItem, contentType)
@@ -324,30 +321,20 @@ class Konstrukteur:
 
 
     def __generateArchives(self):
-        urlTemplate = self.__archiveUrl
         template = self.__getTemplate("Archive")
 
-        # Profile shorthands
-        profileId = self.__profile.getId()
-        destinationPath = self.__profile.getDestinationPath()
-
         # Create individual output files
-        for item in self.__processItems(self.__generateArchiveData()):
+        for item in self.__processItems(self.__generateArchiveData(), self.__archiveUrl):
             pass
 
 
 
 
     def __generatePages(self):
-        urlTemplate = self.__pageUrl
         template = self.__getTemplate("Page")
 
-        # Profile shorthands
-        profileId = self.__profile.getId()
-        destinationPath = self.__profile.getDestinationPath()
-
         # Create individual output files
-        for item in self.__processItems(self.__pages):
+        for item in self.__processItems(self.__pages, self.__pageUrl):
             pass
 
 
