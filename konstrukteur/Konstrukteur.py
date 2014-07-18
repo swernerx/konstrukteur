@@ -226,17 +226,25 @@ class Konstrukteur:
 
     def __generateArchiveData(self):
         pages = []
-        itemsPerPage = self.config["blog"]["archiveItemsPerPage"]
 
-        if not isinstance(self.config["blog"]["archiveTitle"], dict):
-            archiveTitleLang = {}
+
+        main = session.getMain()
+
+        itemsPerPage = main.getConfigValue("konstrukteur.blog.archiveItemsPerPage", 10)
+        title = main.getConfigValue("konstrukteur.blog.archive.title", "Index %(pageno)s")
+
+        # If there is just one title, map the title for each language
+        # This is mainly for simplified access later on
+        if not isinstance(title, dict):
+            titleMap = {}
             for language in self.__languages:
-                archiveTitleLang[language] = self.config["blog"]["archiveTitle"]
-            self.config["blog"]["archiveTitle"] = archiveTitleLang
+                titleMap[language] = title
+            title = titleMap
 
+        # Produce archive pages for each language
         for language in self.__languages:
 
-            archiveTitle = self.config["blog"]["archiveTitle"][language] if "archiveTitle" in self.config["blog"] else "Index %d"
+            archiveTitle = title[language]
             sortedPosts = self.__getSortedPosts(language)
 
             pos = 0
@@ -256,8 +264,6 @@ class Konstrukteur:
                     "mtime" : None,  # Fully generated content
                     "lang" : language
                 }
-
-                #print(Util.stringifyData(archivePage))
 
                 pages.append(archivePage)
                 pageno += 1
