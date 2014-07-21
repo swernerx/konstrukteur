@@ -314,7 +314,7 @@ class Konstrukteur:
 
 
     def __generatePosts(self):
-        template = self.__getTemplate("Post")
+        template = self.__getTemplateByBasename("Post")
 
         # Create individual output files
         for item in self.__processItems(self.__posts, self.__postUrl):
@@ -327,7 +327,7 @@ class Konstrukteur:
 
 
     def __generateArchives(self):
-        template = self.__getTemplate("Archive")
+        template = self.__getTemplateByBasename("Archive")
 
         # Create individual output files
         for item in self.__processItems(self.__generateArchiveData(), self.__archiveUrl):
@@ -337,7 +337,7 @@ class Konstrukteur:
 
 
     def __generatePages(self):
-        template = self.__getTemplate("Page")
+        template = self.__getTemplateByBasename("Page")
 
         # Create individual output files
         for item in self.__processItems(self.__pages, self.__pageUrl):
@@ -346,7 +346,7 @@ class Konstrukteur:
 
 
 
-    def __getTemplate(self, baseName):
+    def __getTemplateByBasename(self, baseName):
             templateName = "%s.%s" % (self.__theme, baseName)
             if not templateName in self.__templates:
                 raise RuntimeError("Template %s not found" % templateName)
