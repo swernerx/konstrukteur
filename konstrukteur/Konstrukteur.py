@@ -231,7 +231,7 @@ class Konstrukteur:
         main = session.getMain()
 
         itemsPerPage = main.getConfigValue("konstrukteur.blog.archiveItemsPerPage", 10)
-        title = main.getConfigValue("konstrukteur.blog.archive.title", "Index %(pageno)s")
+        title = main.getConfigValue("konstrukteur.blog.archive.title", "Index {{pageno}}")
 
         # If there is just one title, map the title for each language
         # This is mainly for simplified access later on
@@ -292,7 +292,7 @@ class Konstrukteur:
 
 
 
-    def __processItems(self, items, urlTemplate):
+    def __interateItems(self, items, urlTemplate):
         length = len(items)
         padding = len(str(length))
 
@@ -300,16 +300,22 @@ class Konstrukteur:
         profileId = self.__profile.getId()
         destinationPath = self.__profile.getDestinationPath()
 
-        for pos, currentItem in enumerate(items):
-            itemSlug = currentItem["slug"]
-            itemMtime = currentItem["mtime"]
+        for pos, item in enumerate(items):
+            itemSlug = item["slug"]
+            itemMtime = item["mtime"]
 
-            filePath = Util.replaceFields(urlTemplate, currentItem)
+            filePath = Util.replaceFields(urlTemplate, item)
             outputFilename = os.path.join(destinationPath, filePath)
+
+            renderModel = {
+                "type": "post",
+                "current": item,
+                "config": self.config
+            }
 
             Console.info("Generating %s/%s: %s...", str(pos + 1).zfill(padding), length, outputFilename)
 
-            yield
+            yield renderModel, outputFilename
 
 
 
@@ -317,12 +323,11 @@ class Konstrukteur:
         template = self.__getTemplateByBasename("Post")
 
         # Create individual output files
-        for item in self.__processItems(self.__posts, self.__postUrl):
-            pass
+        for renderModel, outputFilename in self.__interateItems(self.__posts, self.__postUrl):
 
-            #renderModel = self.__generateRenderModel(currentItem, contentType)
-            #resultContent = template.render(renderModel)
-            #self.__fileManager.writeFile(outputFilename, resultContent)
+
+            resultContent = template.render(renderModel)
+            self.__fileManager.writeFile(outputFilename, resultContent)
 
 
 
@@ -330,7 +335,7 @@ class Konstrukteur:
         template = self.__getTemplateByBasename("Archive")
 
         # Create individual output files
-        for item in self.__processItems(self.__generateArchiveData(), self.__archiveUrl):
+        for item in self.__interateItems(self.__generateArchiveData(), self.__archiveUrl):
             pass
 
 
@@ -340,7 +345,7 @@ class Konstrukteur:
         template = self.__getTemplateByBasename("Page")
 
         # Create individual output files
-        for item in self.__processItems(self.__pages, self.__pageUrl):
+        for item in self.__interateItems(self.__pages, self.__pageUrl):
             pass
 
 
@@ -436,13 +441,3 @@ class Konstrukteur:
         return sorted(pageList, key=lambda pageItem: JasyUtil.getKey(pageItem, "pos", 1000000))
 
 
-    def __generateRenderModel(self, currentItem, contentType):
-        renderModel = {}
-
-        renderModel["type"] = contentType
-        renderModel["current"] = currentItem
-        renderModel["pages"] = self.__getFilteredPages(currentItem)
-        renderModel["config"] = self.config
-        renderModel["languages"] = self.__getItemLanguages(currentItem)
-
-        return renderModel
