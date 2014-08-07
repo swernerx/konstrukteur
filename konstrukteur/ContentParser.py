@@ -80,7 +80,7 @@ class ContentParser:
         parsed["hash"] = File.sha1(filename)[0:8]
 
         # Create simple boolean flag for publish state check
-        parsed["publish"] = parsed["status"] == "published"
+        parsed["isPublished"] = parsed["status"] == "published"
 
         # Parse date to a date instance and pre-formatted date strings
         if "date" in parsed:
