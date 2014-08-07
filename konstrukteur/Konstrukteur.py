@@ -67,7 +67,6 @@ class Konstrukteur:
     __defaultLanguage = None  # String
     __extensions = None  # List
 
-    __regenerate = False  # Boolean
     __templates = None  # List
     __pages = None  # List
     __languages = None  # Set
@@ -82,7 +81,7 @@ class Konstrukteur:
     __fileManager = None
 
 
-    def __init__(self, profile, regenerate=False, project=None):
+    def __init__(self, profile, project=None):
         # Figuring out main project
         session = profile.getSession()
         main = project or session.getMain()
@@ -92,7 +91,6 @@ class Konstrukteur:
         self.__locales = {}
         self.__commandReplacer = []
         self.__id = 0
-        self.__regenerate = not regenerate == False
         self.__cache = main.getCache()
 
         # Importing configuration from project
@@ -101,11 +99,13 @@ class Konstrukteur:
         self.__siteName = main.getConfigValue("konstrukteur.site.name", "Test website")
         self.__siteUrl = main.getConfigValue("konstrukteur.site.url", "//localhost")
 
-        self.__pageUrl = main.getConfigValue("konstrukteur.pageUrl", "{{language}}/{{slug}}.html")
-
-        self.__postUrl = main.getConfigValue("konstrukteur.blog.postUrl", "{{language}}/blog/{{slug}}.html")
-        self.__archiveUrl = main.getConfigValue("konstrukteur.blog.archiveUrl", "archive.{{language}}-{{page}}.html")
+        self.__pageUrl = main.getConfigValue("konstrukteur.pageUrl", "{{slug}}.{{language}}.html")
+        self.__postUrl = main.getConfigValue("konstrukteur.blog.postUrl", "blog/{{date-monthly}}/{{slug}}.{{language}}.html")
+        self.__archiveUrl = main.getConfigValue("konstrukteur.blog.archiveUrl", "blog/archive-{{pageno}}.{{language}}.html")
         self.__feedUrl = main.getConfigValue("konstrukteur.blog.feedUrl", "feed.{{language}}.xml")
+
+        self.__feedLength = main.getConfigValue("konstrukteur.blog.itemsInFeed", 10)
+        self.__archivePageLength = main.getConfigValue("konstrukteur.blog.postsPerArchivePage", 10)
 
         self.__extensions = main.getConfigValue("konstrukteur.extensions", ["markdown", "html"])
         self.__theme = main.getConfigValue("konstrukteur.theme", main.getName())
