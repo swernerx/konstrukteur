@@ -312,7 +312,7 @@ class Konstrukteur:
         for pos, item in enumerate(items):
             # The render model is used for rendering the actual template into HTML
             renderModel = copy.copy(item)
-            renderModel["languages"] = {}
+            renderModel["languages"] = self.__languages
             renderModel["config"] = self.config
 
             if "posts" in item:
