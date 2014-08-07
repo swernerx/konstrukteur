@@ -9,7 +9,7 @@ import jasy.asset.Manager
 
 
 @share
-def build(profile, regenerate = False):
+def build(profile):
 	""" Build static website """
 
 	def getPartUrl(part, type):
@@ -30,5 +30,5 @@ def build(profile, regenerate = False):
 
 	profile.addCommand("part.url", getPartUrl, "url")
 
-	site = Konstrukteur.Konstrukteur(profile, regenerate=regenerate)
+	site = Konstrukteur.Konstrukteur(profile)
 	site.build()
