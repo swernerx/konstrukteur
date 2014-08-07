@@ -46,6 +46,15 @@ import konstrukteur.TemplateCompiler as TemplateCompiler
 import konstrukteur.Template as Template
 
 
+class JsonEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return str(obj)
+
+        return json.JSONEncoder.default(self, obj)
+
+
 class Konstrukteur:
 
     """Core application class for Konstrukteur."""
@@ -283,7 +292,7 @@ class Konstrukteur:
         Console.info("Generating public files...")
         Console.indent()
 
-        self.__generatePosts()
+        #self.__generatePosts()
         self.__generateArchives()
         self.__generatePages()
         self.__generateFeed()
@@ -304,14 +313,24 @@ class Konstrukteur:
             itemSlug = item["slug"]
             itemMtime = item["mtime"]
 
+            if "posts" in item:
+                renderModel = item
+
+
+            else:
+                renderModel = {
+                    "type": "post",
+                    "current": item,
+                    "config": self.config
+                }
+
+
+            print(json.dumps(item, indent=2, sort_keys=True, cls=JsonEncoder))
+
             filePath = Util.replaceFields(urlTemplate, item)
             outputFilename = os.path.join(destinationPath, filePath)
 
-            renderModel = {
-                "type": "post",
-                "current": item,
-                "config": self.config
-            }
+
 
             Console.info("Generating %s/%s: %s...", str(pos + 1).zfill(padding), length, itemSlug)
 
@@ -322,10 +341,7 @@ class Konstrukteur:
     def __generatePosts(self):
         template = self.__getTemplateByBasename("Post")
 
-        # Create individual output files
         for renderModel, outputFilename in self.__interateItems(self.__posts, self.__postUrl):
-
-
             resultContent = template.render(renderModel)
             self.__fileManager.writeFile(outputFilename, resultContent)
 
@@ -334,19 +350,18 @@ class Konstrukteur:
     def __generateArchives(self):
         template = self.__getTemplateByBasename("Archive")
 
-        # Create individual output files
-        for item in self.__interateItems(self.__generateArchiveData(), self.__archiveUrl):
-            pass
-
+        for renderModel, outputFilename in self.__interateItems(self.__generateArchiveData(), self.__archiveUrl):
+            resultContent = template.render(renderModel)
+            self.__fileManager.writeFile(outputFilename, resultContent)
 
 
 
     def __generatePages(self):
         template = self.__getTemplateByBasename("Page")
 
-        # Create individual output files
-        for item in self.__interateItems(self.__pages, self.__pageUrl):
-            pass
+        for renderModel, outputFilename in self.__interateItems(self.__pages, self.__pageUrl):
+            resultContent = template.render(renderModel)
+            self.__fileManager.writeFile(outputFilename, resultContent)
 
 
 
