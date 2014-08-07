@@ -9,6 +9,7 @@ import sys
 import os.path
 import inspect
 import json
+import copy
 filename = inspect.getframeinfo(inspect.currentframe()).filename
 path = os.path.join(os.path.dirname(os.path.abspath(filename)), "..", "konstrukteurlibs", "watchdog", "src")
 sys.path.insert(0, path)
@@ -199,7 +200,6 @@ class Konstrukteur:
 
         for name in self.__templates:
             content = self.__templates[name]
-            # tree = TemplateParser.parse(content)
             compiled = TemplateCompiler.compile(content)
             self.__templates[name] = compiled
 
@@ -310,12 +310,22 @@ class Konstrukteur:
         destinationPath = self.__profile.getDestinationPath()
 
         for pos, item in enumerate(items):
-            itemSlug = item["slug"]
-            itemMtime = item["mtime"]
+            # The render model is used for rendering the actual template into HTML
+            renderModel = copy.copy(item)
+            renderModel["languages"] = {}
+            renderModel["config"] = self.config
 
             if "posts" in item:
-                renderModel = item
+                # Add type information
+                renderModel["type"] = "archive"
 
+                # Add generated title
+                renderModel["title"] = "Archive %s" % item["pageno"]
+
+                # Add relative urls for each post
+                for post in item["posts"]:
+                    postPath = Util.replaceFields(self.__postUrl, post)
+                    post["relativeUrl"] = postPath
 
             else:
                 renderModel = {
@@ -325,14 +335,14 @@ class Konstrukteur:
                 }
 
 
-            print(json.dumps(item, indent=2, sort_keys=True, cls=JsonEncoder))
+            # print(json.dumps(item, indent=2, sort_keys=True, cls=JsonEncoder))
 
             filePath = Util.replaceFields(urlTemplate, item)
             outputFilename = os.path.join(destinationPath, filePath)
 
 
 
-            Console.info("Generating %s/%s: %s...", str(pos + 1).zfill(padding), length, itemSlug)
+            Console.info("Generating %s/%s: %s...", str(pos + 1).zfill(padding), length, item["slug"])
 
             yield renderModel, outputFilename
 
