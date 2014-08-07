@@ -34,9 +34,6 @@ import jasy.core.Cache as Cache
 import jasy.core.Util as JasyUtil
 import jasy.template.Parser as TemplateParser
 
-from watchdog.observers import Observer
-from watchdog.events import LoggingEventHandler
-
 import konstrukteur.HtmlParser
 import konstrukteur.HtmlBeautifier
 import konstrukteur.Language
@@ -144,34 +141,6 @@ class Konstrukteur:
 
         self.__initializeTemplates()
         self.__generateOutput()
-
-        # Start actual file watcher
-        if self.__regenerate:
-            # We need to pause the session for not blocking the cache
-            self.__session.pause()
-
-            fileChangeEventHandler = konstrukteur.FileWatcher.FileChangeEventHandler()
-
-            observer = Observer()
-            observer.schedule(fileChangeEventHandler, self.__sourcePath, recursive=True)
-            observer.start()
-
-            try:
-                Console.info("Waiting for file changes (abort with CTRL-C)")
-                while True:
-                    time.sleep(1)
-                    if fileChangeEventHandler.dirty:
-                        fileChangeEventHandler.dirty = False
-                        self.__generateOutput()
-            except KeyboardInterrupt:
-                observer.stop()
-
-            observer.join()
-
-            # Resume the session after exciting
-            self.__session.resume()
-
-        Console.outdent()
 
 
     def __generateOutput(self):
