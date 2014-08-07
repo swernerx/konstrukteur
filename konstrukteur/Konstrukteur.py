@@ -313,7 +313,7 @@ class Konstrukteur:
                 "config": self.config
             }
 
-            Console.info("Generating %s/%s: %s...", str(pos + 1).zfill(padding), length, outputFilename)
+            Console.info("Generating %s/%s: %s...", str(pos + 1).zfill(padding), length, itemSlug)
 
             yield renderModel, outputFilename
 
