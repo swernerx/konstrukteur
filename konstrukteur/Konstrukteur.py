@@ -203,8 +203,6 @@ class Konstrukteur:
             compiled = TemplateCompiler.compile(content)
             self.__templates[name] = compiled
 
-            print("Compiled Template: ", name, "=>", compiled)
-
 
     def __parseContent(self):
         """Parse all content items in users content directory."""
@@ -301,7 +299,7 @@ class Konstrukteur:
 
 
 
-    def __interateItems(self, items, urlTemplate):
+    def __interateItems(self, items, urlTemplate, itemType):
         length = len(items)
         padding = len(str(length))
 
@@ -315,7 +313,7 @@ class Konstrukteur:
             renderModel["languages"] = self.__languages
             renderModel["config"] = self.config
 
-            if "posts" in item:
+            if itemType is "archive":
                 # Add type information
                 renderModel["type"] = "archive"
 
@@ -327,12 +325,14 @@ class Konstrukteur:
                     postPath = Util.replaceFields(self.__postUrl, post)
                     post["relativeUrl"] = postPath
 
+            elif itemType is "page":
+                pass
+
+            elif itemType is "post":
+                pass
+
             else:
-                renderModel = {
-                    "type": "post",
-                    "current": item,
-                    "config": self.config
-                }
+                raise Exception("Unknown item type: %s" % itemType)
 
 
             # print(json.dumps(item, indent=2, sort_keys=True, cls=JsonEncoder))
@@ -351,7 +351,7 @@ class Konstrukteur:
     def __generatePosts(self):
         template = self.__getTemplateByBasename("Post")
 
-        for renderModel, outputFilename in self.__interateItems(self.__posts, self.__postUrl):
+        for renderModel, outputFilename in self.__interateItems(self.__posts, self.__postUrl, "post"):
             resultContent = template.render(renderModel)
             self.__fileManager.writeFile(outputFilename, resultContent)
 
@@ -360,7 +360,7 @@ class Konstrukteur:
     def __generateArchives(self):
         template = self.__getTemplateByBasename("Archive")
 
-        for renderModel, outputFilename in self.__interateItems(self.__generateArchiveData(), self.__archiveUrl):
+        for renderModel, outputFilename in self.__interateItems(self.__generateArchiveData(), self.__archiveUrl, "archive"):
             resultContent = template.render(renderModel)
             self.__fileManager.writeFile(outputFilename, resultContent)
 
@@ -369,7 +369,7 @@ class Konstrukteur:
     def __generatePages(self):
         template = self.__getTemplateByBasename("Page")
 
-        for renderModel, outputFilename in self.__interateItems(self.__pages, self.__pageUrl):
+        for renderModel, outputFilename in self.__interateItems(self.__pages, self.__pageUrl, "page"):
             resultContent = template.render(renderModel)
             self.__fileManager.writeFile(outputFilename, resultContent)
 
