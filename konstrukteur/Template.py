@@ -20,9 +20,13 @@ def htmlEscape(str):
 
 def getter(key, obj):
     if isinstance(obj, dict):
+        if key in obj:
+            return obj[key]
+
         camelized = camelize(key)
         if camelized in obj:
             return obj[camelized]
+
 
 def plain(key, data):
     if data is not None:
