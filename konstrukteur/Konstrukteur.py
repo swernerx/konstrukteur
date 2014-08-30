@@ -181,8 +181,8 @@ class Konstrukteur:
         Console.info("Parsing content...")
         Console.indent()
 
-        self.__pages = contentParser.parse(self.__pagePath)
-        self.__posts = contentParser.parse(self.__postPath)
+        self.__pages = contentParser.parse(self.__pagePath, "page")
+        self.__posts = contentParser.parse(self.__postPath, "post")
         self.__languages = contentParser.getLanguages()
 
         Console.outdent()
@@ -259,10 +259,10 @@ class Konstrukteur:
         Console.info("Generating public files...")
         Console.indent()
 
-        #self.__generatePosts()
-        self.__generateArchives()
+        # self.__generatePosts()
+        # self.__generateArchives()
         self.__generatePages()
-        self.__generateFeed()
+        # self.__generateFeed()
 
         Console.outdent()
 
@@ -311,7 +311,7 @@ class Konstrukteur:
 
 
 
-            Console.info("Generating %s/%s: %s...", str(pos + 1).zfill(padding), length, item["slug"])
+            Console.info("Generating %s/%s: %s@%s...", str(pos + 1).zfill(padding), length, item["id"], item["language"])
 
             yield renderModel, outputFilename
 

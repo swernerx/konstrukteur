@@ -8,6 +8,7 @@ import glob
 import os
 import sys
 import dateutil
+import re
 
 import jasy.core.Console as Console
 import jasy.core.File as File
@@ -32,29 +33,66 @@ class ContentParser:
         self.__id = 1
         self.__languages = set()
         self.__defaultLanguage = defaultLanguage
+        self.__alternateLanguages = {}
+        self.__fileNameLanguage = re.compile(r"^(.*)\.([a-z]{2})\.[a-zA-Z]+$")
 
 
     def getLanguages(self):
         return self.__languages
 
 
-    def parse(self, path):
+    def parse(self, path, namespace):
         Console.info("Processing %s..." % path)
         Console.indent()
 
         collection = []
         for extension in self.__extensions:
-            for filename in glob.iglob(os.path.join(path, "*.%s" % extension)):
-                basename = os.path.basename(filename)
-                Console.debug("Parsing %s" % basename)
+            for fileName in glob.iglob(os.path.join(path, "*.%s" % extension)):
 
-                parsed = self.__delegatedParse(filename, extension)
-                if not parsed:
-                    Console.error("Error parsing file %s" % filename)
+                # Extract fileId and fileLanguage from file name
+                relativeFileName = os.path.relpath(fileName, path)
+                languageMatch = self.__fileNameLanguage.match(relativeFileName)
+                if languageMatch:
+                    fileId = languageMatch.group(1)
+                    fileLanguage = languageMatch.group(2)
+                else:
+                    fileId = os.path.splitext(relativeFileName)[0]
+                    fileLanguage = None
+
+                fileId = namespace + "." + fileId.replace(os.sep, ".")
+                Console.debug("Parsing %s...", fileId)
+
+                # Custom parser support
+                model = self.__delegatedParse(fileName, extension)
+                if not model:
+                    Console.error("Error parsing file %s" % fileName)
                     continue
 
-                self.__postProcess(parsed, filename)
-                collection.append(parsed)
+                # Add missing language / id data
+                if not "id" in model:
+                    model["id"] = fileId
+                if not "language" in model:
+                    model["language"] = fileLanguage or self.__defaultLanguage
+                elif fileLanguage and fileLanguage != model["language"]:
+                    raise Exception("Different language definitions at file name / file content level in: %s" % fileName)
+
+                # Cleanup and extend model data
+                self.__postProcess(model, fileName)
+
+                # Track alternate languages
+                alternates = self.__alternateLanguages
+                if not fileId in alternates:
+                    alternates[fileId] = {}
+                elif fileLanguage in alternates[fileId]:
+                    raise Exception("Got conflict. Using same fileID (%s) and language (%s) like previously processed item!" % (fileId, fileLanguage))
+
+                alternates[fileId][fileLanguage] = model
+
+                # Automatically track all used languages
+                self.__languages.add(model["language"])
+
+                # Register all item models
+                collection.append(model)
 
         Console.info("Registered %s files.", len(collection))
         Console.outdent()
@@ -62,36 +100,30 @@ class ContentParser:
         return collection
 
 
-    def __postProcess(self, parsed, filename):
-        if "slug" in parsed:
-            parsed["slug"] = Util.fixSlug(parsed["slug"])
+    def __postProcess(self, model, fileName):
+        # Parse/Normalize slug
+        if "slug" in model:
+            model["slug"] = Util.fixSlug(model["slug"])
         else:
-            parsed["slug"] = Util.fixSlug(parsed["title"])
+            model["slug"] = Util.fixSlug(model["title"])
 
-        if not "status" in parsed:
-            parsed["status"] = "published"
+        # Support for drafts
+        if not "status" in model:
+            model["status"] = "published"
 
-        # Expect default language when not defined otherwise
-        if not "lang" in parsed:
-            parsed["lang"] = self.__defaultLanguage
+        model["isPublished"] = model["status"] == "published"
 
         # Add modification time and short hash
-        parsed["mtime"] = os.path.getmtime(filename)
-        parsed["hash"] = File.sha1(filename)[0:8]
-
-        # Create simple boolean flag for publish state check
-        parsed["isPublished"] = parsed["status"] == "published"
+        model["mtime"] = os.path.getmtime(fileName)
+        model["hash"] = File.sha1(fileName)[0:8]
 
         # Parse date to a date instance and pre-formatted date strings
-        if "date" in parsed:
-            parsed["date"] = dateutil.parser.parse(parsed["date"]).replace(tzinfo=dateutil.tz.tzlocal())
-            parsed["date-daily"] = parsed["date"].strftime("%y-%m-%d")
-            parsed["date-monthly"] = parsed["date"].strftime("%y-%m")
+        if "date" in model:
+            model["date"] = dateutil.parser.parse(model["date"]).replace(tzinfo=dateutil.tz.tzlocal())
+            model["date-daily"] = model["date"].strftime("%y-%m-%d")
+            model["date-monthly"] = model["date"].strftime("%y-%m")
 
-        # Automatically register new languages
-        self.__languages.add(parsed["lang"])
-
-        return parsed
+        return model
 
 
     def __delegatedParse(self, filename, extension):
